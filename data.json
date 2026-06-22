@@ -33,8 +33,8 @@
         {
           "date": "03/07/2026",
           "dayOfWeek": "T6",
-          "orders": 0,
-          "money": 0
+          "orders": 2000,
+          "money": 20000000000
         },
         {
           "date": "04/07/2026",
