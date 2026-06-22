@@ -59,7 +59,7 @@
       "current": 3,
       "used": 1,
       "remaining": 2,
-      "needBuy": 1
+      "needBuy": 0
     },
     {
       "id": "mat_1782148005972",
@@ -68,7 +68,7 @@
       "current": 7,
       "used": 1,
       "remaining": 6,
-      "needBuy": 1
+      "needBuy": 0
     },
     {
       "id": "mat_1782148006140",
@@ -77,7 +77,7 @@
       "current": 2,
       "used": 1,
       "remaining": 1,
-      "needBuy": 1
+      "needBuy": 0
     }
   ],
   "notes": [
