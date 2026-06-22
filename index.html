@@ -723,7 +723,7 @@ const app = {
         tr.classList.add('editing');
         tr.innerHTML = `
           <td>${idx + 1}</td>
-          <td>${day.date} (${day.dayOfWeek})</td>
+          <td><input type="text" id="editDate" value="${day.date}" placeholder="dd/mm/yyyy" style="width:110px;"></td>
           <td><input type="number" id="editOrders" value="${day.orders}" min="0"></td>
           <td><input type="number" id="editMoney" value="${day.money}" min="0"></td>
           <td class="td-actions">
@@ -783,7 +783,7 @@ const app = {
           <td class="td-number">${item.current}</td>
           <td class="td-number">${item.used}</td>
           <td class="td-remaining ${item.remaining < 10 ? 'low' : 'ok'}">${item.remaining}</td>
-          <td>${item.needBuy > 0 ? item.needBuy : '-'}</td>
+          <td><input type="checkbox" class="custom-checkbox" ${item.needBuy > 0 ? 'checked' : ''} onchange="app.toggleNeedBuy(${idx})"></td>
           <td class="td-actions">
             <button class="action-btn edit" onclick="app.editInventoryRow(${idx})" title="Sửa" ${!this.editMode ? 'disabled' : ''}>✎</button>
             <button class="action-btn delete" onclick="app.deleteInventoryRow(${idx})" title="Xóa" ${!this.editMode ? 'disabled' : ''}>🗑</button>
@@ -797,7 +797,7 @@ const app = {
   renderShoppingList() {
     const list = document.getElementById('shoppingList');
     list.innerHTML = '';
-    const needBuy = this.data.inventory.filter(i => i.needBuy > 0 || i.remaining < 10);
+    const needBuy = this.data.inventory.filter(i => i.needBuy > 0);
     document.getElementById('shopBadge').textContent = needBuy.length;
 
     if (needBuy.length === 0) {
@@ -809,7 +809,6 @@ const app = {
       const div = document.createElement('div');
       div.className = 'shop-item';
       div.innerHTML = `
-        <div class="shop-item-check"><input type="checkbox" class="custom-checkbox" onchange="this.checked ? this.closest('.shop-item').style.opacity='0.5' : this.closest('.shop-item').style.opacity='1'"></div>
         ${item.image ? `<img class="shop-item-img" src="${item.image}">` : `<div class="shop-item-img-placeholder">📦</div>`}
         <div class="shop-item-info">
           <div class="shop-item-name">${item.name}</div>
@@ -953,15 +952,28 @@ const app = {
   },
 
   saveRevenueRow() {
+    const dateInput = document.getElementById('editDate').value.trim();
     const orders = parseInt(document.getElementById('editOrders').value) || 0;
     const money = parseInt(document.getElementById('editMoney').value) || 0;
     const week = this.data.weeks[this.currentWeekIndex];
-    week.days[this.editingRevenueRow].orders = orders;
-    week.days[this.editingRevenueRow].money = money;
+    const day = week.days[this.editingRevenueRow];
+    if (dateInput) {
+      day.date = dateInput;
+      // Tự động tính lại thứ từ ngày
+      const parsed = this.parseDate(dateInput);
+      if (!isNaN(parsed.getTime())) {
+        const dow = parsed.getDay();
+        const dayNames = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
+        day.dayOfWeek = dayNames[dow];
+      }
+    }
+    day.orders = orders;
+    day.money = money;
     this.editingRevenueRow = null;
     this.markUnsaved();
     this.saveLocal();
     this.renderRevenue();
+    this.updateWeekNav();
   },
 
   cancelEditRevenue() {
@@ -992,7 +1004,7 @@ const app = {
     item.current = parseInt(document.getElementById('editMatCurrent').value) || 0;
     item.used = parseInt(document.getElementById('editMatUsed').value) || 0;
     item.remaining = item.current - item.used;
-    item.needBuy = item.remaining < 10 ? Math.max(0, 100 - item.remaining) : 0;
+    // Không tự động tính needBuy — user tự tick checkbox
     this.editingInventoryRow = null;
     this.markUnsaved();
     this.saveLocal();
@@ -1067,6 +1079,15 @@ const app = {
   hideAddNote() {
     document.getElementById('noteInputWrap').classList.add('hidden');
     document.getElementById('noteInput').value = '';
+  },
+
+  toggleNeedBuy(index) {
+    const item = this.data.inventory[index];
+    item.needBuy = item.needBuy > 0 ? 0 : 1;
+    this.markUnsaved();
+    this.saveLocal();
+    this.renderInventory();
+    this.renderShoppingList();
   },
 
   addNote() {
