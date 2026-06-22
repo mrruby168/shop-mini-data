@@ -1,0 +1,93 @@
+{
+  "shopName": "SHOP MINI",
+  "weeks": [
+    {
+      "id": "week_1782141571458",
+      "weekNumber": 26,
+      "year": 2026,
+      "days": [
+        {
+          "date": "29/06/2026",
+          "dayOfWeek": "T2",
+          "orders": 10,
+          "money": 18000
+        },
+        {
+          "date": "30/06/2026",
+          "dayOfWeek": "T3",
+          "orders": 0,
+          "money": 0
+        },
+        {
+          "date": "01/07/2026",
+          "dayOfWeek": "T4",
+          "orders": 0,
+          "money": 0
+        },
+        {
+          "date": "02/07/2026",
+          "dayOfWeek": "T5",
+          "orders": 0,
+          "money": 0
+        },
+        {
+          "date": "03/07/2026",
+          "dayOfWeek": "T6",
+          "orders": 0,
+          "money": 0
+        },
+        {
+          "date": "04/07/2026",
+          "dayOfWeek": "T7",
+          "orders": 0,
+          "money": 0
+        },
+        {
+          "date": "05/07/2026",
+          "dayOfWeek": "CN",
+          "orders": 0,
+          "money": 0
+        }
+      ]
+    }
+  ],
+  "inventory": [
+    {
+      "id": "mat_1782141571458",
+      "name": "Ly nhựa 500ml",
+      "image": "",
+      "current": 1000,
+      "used": 50,
+      "remaining": 950,
+      "needBuy": 0
+    },
+    {
+      "id": "mat_1782141571459",
+      "name": "Ống hút đen",
+      "image": "",
+      "current": 1000,
+      "used": 50,
+      "remaining": 950,
+      "needBuy": 0
+    },
+    {
+      "id": "mat_1782141571460",
+      "name": "Sữa tươi Vinamilk",
+      "image": "",
+      "current": 30,
+      "used": 5,
+      "remaining": 25,
+      "needBuy": 0
+    },
+    {
+      "id": "mat_1782141571461",
+      "name": "Syrup đường đen",
+      "image": "",
+      "current": 10,
+      "used": 2,
+      "remaining": 8,
+      "needBuy": 0
+    }
+  ],
+  "notes": []
+}
