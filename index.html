@@ -1170,14 +1170,16 @@ const app = {
   },
 
   saveGitHubConfig() {
-    const token = document.getElementById('cfgToken').value;
+    const token = document.getElementById('cfgToken').value.trim();
+    const repo = document.getElementById('cfgRepo').value.trim();
+    const branch = document.getElementById('cfgBranch').value.trim();
+    const path = document.getElementById('cfgPath').value.trim();
+    if (!token || !repo) {
+      this.showToast('Vui lòng nhập đầy đủ Token và Repo', 'error');
+      return;
+    }
     localStorage.setItem('shopMiniGitHubToken', token);
-    this.data.github = {
-      token: token,
-      repo: document.getElementById('cfgRepo').value,
-      branch: document.getElementById('cfgBranch').value,
-      path: document.getElementById('cfgPath').value
-    };
+    this.data.github = { token: '', repo, branch, path };
     this.saveLocal();
     this.showToast('Đã lưu cấu hình GitHub', 'success');
     this.closeModal('configModal');
@@ -1245,7 +1247,8 @@ const app = {
       if (sha) body.sha = sha;
 
       const putUrl = `https://api.github.com/repos/${cfg.repo}/contents/${cfg.path}`;
-      console.log('[GitHub] PUT', putUrl, 'sha:', sha);
+      console.log('[GitHub] PUT URL:', putUrl);
+      console.log('[GitHub] PUT body:', JSON.stringify({ message: body.message, branch: body.branch, sha: body.sha, contentLength: body.content.length }));
       let putRes = await fetch(putUrl, {
         method: 'PUT',
         headers: { Authorization: `token ${token}`, Accept: 'application/vnd.github.v3+json', 'Content-Type': 'application/json' },
@@ -1275,6 +1278,9 @@ const app = {
       if (putRes.ok) {
         this.markSaved();
         this.showToast('Đã lưu lên GitHub thành công', 'success');
+      } else if (putRes.status === 404) {
+        console.error('[GitHub] PUT 404: Repo chưa có commit hoặc branch không tồn tại');
+        this.showToast('Lỗi 404: Repo chưa có commit. Vui lòng tạo README.md trên GitHub trước.', 'error');
       } else {
         const errText = await putRes.text();
         let errMsg = 'Không xác định';
