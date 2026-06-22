@@ -1280,8 +1280,14 @@ const app = {
       // Retry 1 lần nếu 409 Conflict (SHA mismatch)
       if (putRes.status === 409) {
         console.log('[GitHub] 409 Conflict, retrying with fresh SHA...');
-        const retryGet = await fetch(getUrl, {
-          headers: { Authorization: `token ${token}`, Accept: 'application/vnd.github.v3+json' }
+        // Thêm cache-buster để lấy SHA mới nhất
+        const retryUrl = getUrl + '&_cb=' + Date.now();
+        const retryGet = await fetch(retryUrl, {
+          headers: { 
+            Authorization: `token ${token}`, 
+            Accept: 'application/vnd.github.v3+json',
+            'Cache-Control': 'no-cache, no-store'
+          }
         });
         if (retryGet.ok) {
           const retryData = await retryGet.json();
@@ -1293,6 +1299,16 @@ const app = {
             body: JSON.stringify(body)
           });
           console.log('[GitHub] Retry PUT status:', putRes.status);
+        } else if (retryGet.status === 404) {
+          // File bị xóa giữa chừng, tạo lại không cần SHA
+          console.log('[GitHub] File deleted during update, creating without SHA');
+          delete body.sha;
+          putRes = await fetch(putUrl, {
+            method: 'PUT',
+            headers: { Authorization: `token ${token}`, Accept: 'application/vnd.github.v3+json', 'Content-Type': 'application/json' },
+            body: JSON.stringify(body)
+          });
+          console.log('[GitHub] Recreate PUT status:', putRes.status);
         }
       }
 
