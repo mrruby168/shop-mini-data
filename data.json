@@ -9,32 +9,32 @@
         {
           "date": "29/06/2026",
           "dayOfWeek": "T2",
-          "orders": 0,
+          "orders": 6,
           "money": 18000
         },
         {
           "date": "30/06/2026",
           "dayOfWeek": "T3",
-          "orders": 100,
-          "money": 100000
+          "orders": 0,
+          "money": 0
         },
         {
           "date": "01/07/2026",
           "dayOfWeek": "T4",
-          "orders": 100,
-          "money": 100000
+          "orders": 0,
+          "money": 0
         },
         {
           "date": "02/07/2026",
           "dayOfWeek": "T5",
-          "orders": 100,
-          "money": 10000
+          "orders": 0,
+          "money": 0
         },
         {
           "date": "03/07/2026",
           "dayOfWeek": "T6",
-          "orders": 2000,
-          "money": 20000000000
+          "orders": 0,
+          "money": 0
         },
         {
           "date": "04/07/2026",
