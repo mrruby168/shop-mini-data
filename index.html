@@ -1220,9 +1220,30 @@ const app = {
       return;
     }
     try {
-      // Tạo bản sao data, xóa token để tránh GitHub phát hiện secret
-      const dataToPush = JSON.parse(JSON.stringify(this.data));
-      dataToPush.github = { token: '', repo: cfg.repo, branch: cfg.branch, path: cfg.path };
+      // Kiểm tra repo có commit chưa (repo trống thì API Contents không hoạt động)
+      const commitsUrl = `https://api.github.com/repos/${cfg.repo}/commits?per_page=1`;
+      const commitsRes = await fetch(commitsUrl, {
+        headers: { Authorization: `token ${token}`, Accept: 'application/vnd.github.v3+json' }
+      });
+      if (commitsRes.status === 404) {
+        this.showToast('Lỗi: Repo không tồn tại hoặc không có quyền truy cập', 'error');
+        return;
+      }
+      const commits = await commitsRes.json();
+      if (!Array.isArray(commits) || commits.length === 0) {
+        this.showToast('Lỗi: Repo chưa có commit. Vui lòng tạo README.md trên GitHub trước.', 'error');
+        console.error('[GitHub] Repo has no commits. Cannot create file via API.');
+        return;
+      }
+
+      // Tạo object sạch KHÔNG chứa github.token để tránh GitHub phát hiện secret
+      const dataToPush = {
+        shopName: this.data.shopName,
+        weeks: JSON.parse(JSON.stringify(this.data.weeks)),
+        inventory: JSON.parse(JSON.stringify(this.data.inventory)),
+        notes: JSON.parse(JSON.stringify(this.data.notes))
+      };
+      console.log('[GitHub] Pushing data. Keys:', Object.keys(dataToPush));
 
       const content = btoa(unescape(encodeURIComponent(JSON.stringify(dataToPush, null, 2))));
       let sha = null;
