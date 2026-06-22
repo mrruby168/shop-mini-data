@@ -509,9 +509,11 @@ const app = {
   editingRevenueRow: null,
   editingInventoryRow: null,
   hasUnsavedChanges: false,
+  savedSha: null, // SHA của file trên GitHub, lưu sau mỗi lần PUT thành công
 
-  init() {
+  async init() {
     this.loadData();
+    await this.loadFromGitHub(); // Tải data từ GitHub nếu có, ghi đè local
     this.render();
     this.setupEventListeners();
     this.updateWeekNav();
@@ -538,6 +540,42 @@ const app = {
     const token = localStorage.getItem('shopMiniGitHubToken');
     if (token) {
       this.data.github.token = token;
+    }
+  },
+
+  async loadFromGitHub() {
+    const cfg = this.data.github;
+    const token = localStorage.getItem('shopMiniGitHubToken') || cfg.token;
+    if (!token || !cfg.repo) return;
+    try {
+      const url = `https://api.github.com/repos/${cfg.repo}/contents/${cfg.path}?ref=${cfg.branch}&_cb=${Date.now()}`;
+      console.log('[GitHub] Load data from:', url);
+      const res = await fetch(url, {
+        headers: { Authorization: `token ${token}`, Accept: 'application/vnd.github.v3+json' }
+      });
+      if (res.ok) {
+        const fileData = await res.json();
+        const jsonStr = decodeURIComponent(escape(atob(fileData.content)));
+        const remoteData = JSON.parse(jsonStr);
+        // Merge: giữ lại github config local, lấy data từ remote
+        this.data = {
+          ...remoteData,
+          github: this.data.github // giữ config local (có thể có token mới)
+        };
+        this.migrateData();
+        this.currentWeekIndex = this.data.weeks.length - 1;
+        if (this.currentWeekIndex < 0) this.currentWeekIndex = 0;
+        this.savedSha = fileData.sha;
+        this.saveLocal();
+        this.render();
+        console.log('[GitHub] Loaded remote data, SHA:', this.savedSha);
+      } else if (res.status === 404) {
+        console.log('[GitHub] No data.json yet on remote, using local');
+      } else {
+        console.error('[GitHub] Load failed:', res.status);
+      }
+    } catch (e) {
+      console.error('[GitHub] Load error:', e.message);
     }
   },
 
@@ -1212,30 +1250,19 @@ const app = {
   },
 
   async saveToGitHub() {
+    const saveBtn = document.getElementById('saveBtn');
+    if (saveBtn) { saveBtn.disabled = true; saveBtn.textContent = '⏳ Đang lưu...'; }
+
     const cfg = this.data.github;
     const token = localStorage.getItem('shopMiniGitHubToken') || cfg.token;
     if (!token || !cfg.repo) {
       this.showToast('Chưa cấu hình GitHub. Vui lòng vào Cấu hình.', 'warning');
       this.openModal('configModal');
+      if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = '💾 Save'; }
       return;
     }
-    try {
-      // Kiểm tra repo có commit chưa (repo trống thì API Contents không hoạt động)
-      const commitsUrl = `https://api.github.com/repos/${cfg.repo}/commits?per_page=1`;
-      const commitsRes = await fetch(commitsUrl, {
-        headers: { Authorization: `token ${token}`, Accept: 'application/vnd.github.v3+json' }
-      });
-      if (commitsRes.status === 404) {
-        this.showToast('Lỗi: Repo không tồn tại hoặc không có quyền truy cập', 'error');
-        return;
-      }
-      const commits = await commitsRes.json();
-      if (!Array.isArray(commits) || commits.length === 0) {
-        this.showToast('Lỗi: Repo chưa có commit. Vui lòng tạo README.md trên GitHub trước.', 'error');
-        console.error('[GitHub] Repo has no commits. Cannot create file via API.');
-        return;
-      }
 
+    try {
       // Tạo object sạch KHÔNG chứa github.token để tránh GitHub phát hiện secret
       const dataToPush = {
         shopName: this.data.shopName,
@@ -1243,33 +1270,38 @@ const app = {
         inventory: JSON.parse(JSON.stringify(this.data.inventory)),
         notes: JSON.parse(JSON.stringify(this.data.notes))
       };
-      console.log('[GitHub] Pushing data. Keys:', Object.keys(dataToPush));
 
       const content = btoa(unescape(encodeURIComponent(JSON.stringify(dataToPush, null, 2))));
-      let sha = null;
-      const getUrl = `https://api.github.com/repos/${cfg.repo}/contents/${cfg.path}?ref=${cfg.branch}`;
-      console.log('[GitHub] GET', getUrl);
-      const getRes = await fetch(getUrl, {
-        headers: { Authorization: `token ${token}`, Accept: 'application/vnd.github.v3+json' }
-      });
-      console.log('[GitHub] GET status:', getRes.status);
-      if (getRes.ok) {
-        const data = await getRes.json();
-        sha = data.sha;
-        console.log('[GitHub] Got SHA:', sha);
-      } else if (getRes.status === 404) {
-        console.log('[GitHub] File not found, will create new');
+      let sha = this.savedSha; // Hướng 1: dùng SHA đã lưu từ lần trước
+
+      // Nếu chưa có savedSha (lần đầu hoặc đã bị invalidate) → GET lấy SHA hiện tại
+      if (!sha) {
+        const getUrl = `https://api.github.com/repos/${cfg.repo}/contents/${cfg.path}?ref=${cfg.branch}`;
+        console.log('[GitHub] GET', getUrl);
+        const getRes = await fetch(getUrl, {
+          headers: { Authorization: `token ${token}`, Accept: 'application/vnd.github.v3+json' }
+        });
+        console.log('[GitHub] GET status:', getRes.status);
+        if (getRes.ok) {
+          const data = await getRes.json();
+          sha = data.sha;
+          console.log('[GitHub] Got SHA from GET:', sha);
+        } else if (getRes.status === 404) {
+          console.log('[GitHub] File not found, will create new');
+          sha = null;
+        } else {
+          const errText = await getRes.text();
+          console.error('[GitHub] GET error:', getRes.status, errText);
+        }
       } else {
-        const errText = await getRes.text();
-        console.error('[GitHub] GET error:', getRes.status, errText);
+        console.log('[GitHub] Using cached SHA:', sha);
       }
 
       const body = { message: 'Update shop mini data', content, branch: cfg.branch };
       if (sha) body.sha = sha;
 
       const putUrl = `https://api.github.com/repos/${cfg.repo}/contents/${cfg.path}`;
-      console.log('[GitHub] PUT URL:', putUrl);
-      console.log('[GitHub] PUT body:', JSON.stringify({ message: body.message, branch: body.branch, sha: body.sha, contentLength: body.content.length }));
+      console.log('[GitHub] PUT', putUrl, 'sha:', sha);
       let putRes = await fetch(putUrl, {
         method: 'PUT',
         headers: { Authorization: `token ${token}`, Accept: 'application/vnd.github.v3+json', 'Content-Type': 'application/json' },
@@ -1277,17 +1309,12 @@ const app = {
       });
       console.log('[GitHub] PUT status:', putRes.status);
 
-      // Retry 1 lần nếu 409 Conflict (SHA mismatch)
+      // Hướng 2: Retry 409 Conflict — bỏ Cache-Control header, chỉ dùng cache-buster URL
       if (putRes.status === 409) {
         console.log('[GitHub] 409 Conflict, retrying with fresh SHA...');
-        // Thêm cache-buster để lấy SHA mới nhất
-        const retryUrl = getUrl + '&_cb=' + Date.now();
+        const retryUrl = `https://api.github.com/repos/${cfg.repo}/contents/${cfg.path}?ref=${cfg.branch}&_cb=${Date.now()}`;
         const retryGet = await fetch(retryUrl, {
-          headers: { 
-            Authorization: `token ${token}`, 
-            Accept: 'application/vnd.github.v3+json',
-            'Cache-Control': 'no-cache, no-store'
-          }
+          headers: { Authorization: `token ${token}`, Accept: 'application/vnd.github.v3+json' }
         });
         if (retryGet.ok) {
           const retryData = await retryGet.json();
@@ -1300,7 +1327,6 @@ const app = {
           });
           console.log('[GitHub] Retry PUT status:', putRes.status);
         } else if (retryGet.status === 404) {
-          // File bị xóa giữa chừng, tạo lại không cần SHA
           console.log('[GitHub] File deleted during update, creating without SHA');
           delete body.sha;
           putRes = await fetch(putUrl, {
@@ -1313,21 +1339,30 @@ const app = {
       }
 
       if (putRes.ok) {
+        const putData = await putRes.json();
+        // Hướng 1: Lưu SHA mới để lần sau không cần GET nữa
+        this.savedSha = putData.content ? putData.content.sha : null;
+        console.log('[GitHub] Saved new SHA:', this.savedSha);
         this.markSaved();
         this.showToast('Đã lưu lên GitHub thành công', 'success');
       } else if (putRes.status === 404) {
         console.error('[GitHub] PUT 404: Repo chưa có commit hoặc branch không tồn tại');
         this.showToast('Lỗi 404: Repo chưa có commit. Vui lòng tạo README.md trên GitHub trước.', 'error');
+        this.savedSha = null; // Invalidate cached SHA
       } else {
         const errText = await putRes.text();
         let errMsg = 'Không xác định';
         try { const errJson = JSON.parse(errText); errMsg = errJson.message || errText; } catch(e) { errMsg = errText; }
         console.error('[GitHub] PUT error:', putRes.status, errMsg);
         this.showToast('Lỗi lưu GitHub (' + putRes.status + '): ' + errMsg, 'error');
+        if (putRes.status === 409) this.savedSha = null; // SHA mismatch → invalidate cache
       }
     } catch (e) {
       console.error('[GitHub] Exception:', e);
       this.showToast('Lỗi: ' + e.message, 'error');
+    } finally {
+      // Hướng 3: Debounce — luôn enable lại nút Save dù thành công hay lỗi
+      if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = '💾 Save'; }
     }
   },
 
