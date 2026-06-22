@@ -1,0 +1,1314 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SHOP MINI - Quản lý doanh thu & kho hàng</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { font-size: 16px; -webkit-text-size-adjust: 100%; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  background: #f6f8fc; color: #1a1a2e; line-height: 1.5; min-height: 100vh;
+}
+.container { max-width: 1800px; margin: 0 auto; padding: 0 16px; }
+.hidden { display: none !important; }
+.flex { display: flex; }
+.gap-2 { gap: 8px; }
+
+/* HEADER */
+.header {
+  background: #fff; border-bottom: 1px solid #e5e7eb; padding: 12px 0;
+  position: sticky; top: 0; z-index: 100; box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+.header-inner {
+  display: flex; align-items: center; justify-content: space-between;
+  flex-wrap: wrap; gap: 12px;
+}
+.brand { display: flex; align-items: center; gap: 10px; }
+.brand-icon {
+  width: 44px; height: 44px; background: linear-gradient(135deg, #ff6b6b, #ee5a5a);
+  border-radius: 12px; display: flex; align-items: center; justify-content: center;
+  font-size: 22px; color: #fff; box-shadow: 0 2px 8px rgba(238,90,90,0.3);
+}
+.brand-text h1 { font-size: 1.25rem; font-weight: 700; color: #1a1a2e; line-height: 1.2; }
+.brand-text p { font-size: 0.75rem; color: #6b7280; }
+.week-nav {
+  display: flex; align-items: center; gap: 12px;
+  background: #f3f4f6; border-radius: 12px; padding: 6px 16px;
+}
+.week-nav button {
+  width: 32px; height: 32px; border-radius: 8px; border: none; background: #fff;
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  font-size: 16px; color: #374151; transition: all 0.2s;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+}
+.week-nav button:hover { background: #e5e7eb; }
+.week-nav button:active { transform: scale(0.95); }
+.week-info { text-align: center; }
+.week-info .week-label { font-size: 0.875rem; font-weight: 600; color: #1a1a2e; }
+.week-info .week-range { font-size: 0.7rem; color: #6b7280; }
+.header-actions { display: flex; align-items: center; gap: 8px; }
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  padding: 8px 16px; border-radius: 10px; border: none; font-size: 0.875rem;
+  font-weight: 500; cursor: pointer; transition: all 0.2s; white-space: nowrap;
+}
+.btn-primary { background: linear-gradient(135deg, #6366f1, #4f46e5); color: #fff; box-shadow: 0 2px 8px rgba(99,102,241,0.3); }
+.btn-primary:hover { background: linear-gradient(135deg, #4f46e5, #4338ca); }
+.btn-success { background: linear-gradient(135deg, #10b981, #059669); color: #fff; box-shadow: 0 2px 8px rgba(16,185,129,0.3); }
+.btn-success:hover { background: linear-gradient(135deg, #059669, #047857); }
+.btn-danger { background: linear-gradient(135deg, #ef4444, #dc2626); color: #fff; }
+.btn-ghost { background: transparent; color: #6b7280; border: 1px solid #e5e7eb; }
+.btn-ghost:hover { background: #f3f4f6; }
+.btn-sm { padding: 6px 12px; font-size: 0.75rem; border-radius: 8px; }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* DASHBOARD LAYOUT - left wider, right narrower */
+.dashboard-main {
+  display: grid;
+  grid-template-columns: 3fr 0.8fr;
+  gap: 20px;
+  margin-bottom: 24px;
+}
+@media (max-width: 1024px) {
+  .dashboard-main { grid-template-columns: 1fr; }
+}
+
+.left-column {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.right-column {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  max-width: 320px;
+}
+@media (max-width: 1024px) {
+  .right-column { max-width: 100%; }
+}
+
+/* CARD */
+.card {
+  background: #fff; border-radius: 20px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  border: 1px solid #f3f4f6;
+  overflow: hidden;
+  display: flex; flex-direction: column;
+}
+.card-header {
+  padding: 16px 20px;
+  display: flex; align-items: center; justify-content: space-between;
+  border-bottom: 1px solid #f3f4f6;
+}
+.card-title { font-size: 0.95rem; font-weight: 700; color: #1a1a2e; display: flex; align-items: center; gap: 8px; }
+.card-title .icon { font-size: 1.1rem; }
+.card-badge { background: #ef4444; color: #fff; font-size: 0.7rem; font-weight: 600; padding: 2px 8px; border-radius: 10px; min-width: 20px; text-align: center; }
+.card-body { padding: 0; flex: 1; overflow: auto; }
+
+/* TABLE */
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
+th, td { padding: 12px 16px; text-align: left; border-bottom: 1px solid #f3f4f6; white-space: nowrap; }
+th { background: #f9fafb; font-weight: 600; color: #374151; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.3px; position: sticky; top: 0; }
+tr:hover td { background: #f9fafb; }
+tr.editing td { background: #eff6ff; }
+td input, td select { width: 100%; padding: 6px 8px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 0.875rem; outline: none; }
+td input:focus, td select:focus { border-color: #6366f1; box-shadow: 0 0 0 3px rgba(99,102,241,0.1); }
+.td-actions { display: flex; gap: 6px; }
+.action-btn { width: 28px; height: 28px; border-radius: 6px; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 13px; transition: all 0.15s; }
+.action-btn.edit { background: #eff6ff; color: #3b82f6; }
+.action-btn.delete { background: #fef2f2; color: #ef4444; }
+.action-btn.save { background: #ecfdf5; color: #10b981; }
+.action-btn.cancel { background: #f3f4f6; color: #6b7280; }
+.td-img { width: 40px; height: 40px; border-radius: 8px; object-fit: cover; border: 1px solid #e5e7eb; }
+.td-img-placeholder { width: 40px; height: 40px; border-radius: 8px; background: #f3f4f6; display: flex; align-items: center; justify-content: center; font-size: 16px; color: #9ca3af; border: 1px dashed #d1d5db; }
+.td-number { font-variant-numeric: tabular-nums; font-weight: 700; font-size: 1.05rem; }
+.td-remaining { font-weight: 700; font-size: 0.95rem; }
+.td-remaining.ok { color: #059669; }
+.td-remaining.low { color: #ef4444; }
+
+/* Revenue table - bigger and bolder text */
+.revenue-table td { font-size: 1.05rem; font-weight: 700; }
+.revenue-table th { font-size: 0.8rem; }
+
+/* CHECKBOX */
+.custom-checkbox { width: 20px; height: 20px; cursor: pointer; accent-color: #6366f1; }
+
+/* SHOPPING LIST - compact */
+.shop-list { padding: 8px 0; }
+.shop-item { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-bottom: 1px solid #f3f4f6; transition: background 0.15s; }
+.shop-item:hover { background: #f9fafb; }
+.shop-item:last-child { border-bottom: none; }
+.shop-item-check { flex-shrink: 0; }
+.shop-item-img { width: 40px; height: 40px; border-radius: 8px; object-fit: cover; border: 1px solid #e5e7eb; flex-shrink: 0; }
+.shop-item-img-placeholder { width: 40px; height: 40px; border-radius: 8px; background: #f3f4f6; display: flex; align-items: center; justify-content: center; font-size: 16px; color: #9ca3af; flex-shrink: 0; border: 1px dashed #d1d5db; }
+.shop-item-info { flex: 1; min-width: 0; }
+.shop-item-name { font-weight: 600; color: #1a1a2e; font-size: 0.82rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.shop-item-detail { font-size: 0.68rem; color: #6b7280; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.shop-item-remaining { text-align: right; flex-shrink: 0; }
+.shop-item-remaining .label { font-size: 0.65rem; color: #6b7280; }
+.shop-item-remaining .value { font-size: 0.82rem; font-weight: 700; color: #ef4444; }
+.shop-footer { padding: 10px 14px; text-align: center; border-top: 1px solid #f3f4f6; }
+.shop-footer a { color: #ef4444; font-size: 0.75rem; font-weight: 500; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; }
+.shop-footer a:hover { text-decoration: underline; }
+
+/* NOTES - compact */
+.notes-list { padding: 8px 0; }
+.note-item { display: flex; align-items: flex-start; gap: 8px; padding: 10px 14px; border-bottom: 1px solid #f3f4f6; }
+.note-item:last-child { border-bottom: none; }
+.note-bullet { width: 7px; height: 7px; border-radius: 50%; background: #f59e0b; margin-top: 5px; flex-shrink: 0; }
+.note-content { flex: 1; }
+.note-text { font-size: 0.82rem; color: #374151; line-height: 1.5; }
+.note-time { font-size: 0.65rem; color: #9ca3af; margin-top: 3px; }
+.note-delete { background: none; border: none; color: #9ca3af; cursor: pointer; font-size: 14px; padding: 2px; transition: color 0.15s; flex-shrink: 0; }
+.note-delete:hover { color: #ef4444; }
+.note-input-wrap { padding: 10px 14px; border-top: 1px solid #f3f4f6; display: flex; gap: 8px; }
+.note-input-wrap input { flex: 1; padding: 8px 12px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 0.875rem; outline: none; }
+.note-input-wrap input:focus { border-color: #6366f1; box-shadow: 0 0 0 3px rgba(99,102,241,0.1); }
+
+/* WEEK PAGINATION */
+.week-pagination {
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+  padding: 12px 20px; border-top: 1px solid #f3f4f6;
+}
+.week-pagination button {
+  width: 32px; height: 32px; border-radius: 8px; border: 1px solid #e5e7eb;
+  background: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center;
+  font-size: 14px; color: #374151; transition: all 0.2s;
+}
+.week-pagination button:hover { background: #f3f4f6; }
+.week-pagination button.active {
+  background: linear-gradient(135deg, #6366f1, #4f46e5); color: #fff; border-color: #6366f1;
+}
+.week-pagination button:disabled { opacity: 0.3; cursor: not-allowed; }
+.week-pagination-info { font-size: 0.75rem; color: #6b7280; margin-left: 8px; }
+
+/* MODAL */
+.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000; padding: 16px; opacity: 0; visibility: hidden; transition: opacity 0.2s, visibility 0.2s; }
+.modal-overlay.active { opacity: 1; visibility: visible; }
+.modal { background: #fff; border-radius: 20px; width: 100%; max-width: 400px; box-shadow: 0 20px 60px rgba(0,0,0,0.15); transform: translateY(20px) scale(0.95); transition: transform 0.2s; }
+.modal-overlay.active .modal { transform: translateY(0) scale(1); }
+.modal-header { padding: 20px 24px 0; display: flex; align-items: center; justify-content: space-between; }
+.modal-title { font-size: 1.1rem; font-weight: 700; }
+.modal-close { background: none; border: none; font-size: 20px; color: #9ca3af; cursor: pointer; width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; }
+.modal-close:hover { background: #f3f4f6; color: #374151; }
+.modal-body { padding: 16px 24px; }
+.modal-footer { padding: 0 24px 20px; display: flex; gap: 8px; justify-content: flex-end; }
+.form-group { margin-bottom: 12px; }
+.form-group label { display: block; font-size: 0.8rem; font-weight: 600; color: #374151; margin-bottom: 4px; }
+.form-group input, .form-group select, .form-group textarea { width: 100%; padding: 10px 12px; border: 1px solid #d1d5db; border-radius: 10px; font-size: 0.875rem; outline: none; font-family: inherit; }
+.form-group input:focus, .form-group select:focus, .form-group textarea:focus { border-color: #6366f1; box-shadow: 0 0 0 3px rgba(99,102,241,0.1); }
+.form-group .hint { font-size: 0.7rem; color: #9ca3af; margin-top: 2px; }
+
+/* TOAST */
+.toast-container { position: fixed; bottom: 20px; right: 20px; z-index: 2000; display: flex; flex-direction: column; gap: 8px; }
+.toast { background: #1a1a2e; color: #fff; padding: 12px 16px; border-radius: 12px; font-size: 0.875rem; box-shadow: 0 4px 12px rgba(0,0,0,0.15); display: flex; align-items: center; gap: 8px; animation: toastIn 0.3s ease; max-width: 320px; }
+.toast.success { background: #059669; }
+.toast.error { background: #dc2626; }
+.toast.warning { background: #d97706; }
+@keyframes toastIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+/* PRINT */
+@media print {
+  .header, .btn, .action-btn, .modal-overlay, .toast-container, .card-header .btn, .note-input-wrap, .shop-footer, .card-header .card-badge, .unsaved-bar { display: none !important; }
+  body { background: #fff; }
+  .card { box-shadow: none; border: 1px solid #e5e7eb; break-inside: avoid; }
+  .dashboard-main { grid-template-columns: 1fr; }
+}
+
+/* SCROLLBAR */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #9ca3af; }
+
+/* IMAGE UPLOAD */
+.img-upload { position: relative; width: 40px; height: 40px; }
+.img-upload input[type="file"] { position: absolute; inset: 0; opacity: 0; cursor: pointer; z-index: 2; }
+.img-upload .preview { width: 40px; height: 40px; border-radius: 8px; object-fit: cover; border: 1px solid #e5e7eb; }
+.img-upload .placeholder { width: 40px; height: 40px; border-radius: 8px; background: #f3f4f6; display: flex; align-items: center; justify-content: center; font-size: 16px; color: #9ca3af; border: 1px dashed #d1d5db; }
+
+/* EMPTY STATE */
+.empty-state { padding: 40px 20px; text-align: center; color: #9ca3af; }
+.empty-state .icon { font-size: 40px; margin-bottom: 8px; }
+.empty-state p { font-size: 0.875rem; }
+
+/* UNSAVED CHANGES BAR */
+.unsaved-bar {
+  position: fixed; top: 0; left: 0; right: 0;
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  color: #fff; padding: 12px 16px; text-align: center;
+  font-size: 0.875rem; font-weight: 500; z-index: 9999;
+  transform: translateY(-100%); transition: transform 0.3s;
+  display: flex; align-items: center; justify-content: center; gap: 12px;
+}
+.unsaved-bar.show { transform: translateY(0); }
+.unsaved-bar button {
+  background: #fff; color: #d97706; border: none; padding: 6px 16px;
+  border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 0.8rem;
+}
+.unsaved-bar button:hover { background: #fef3c7; }
+
+/* Week delete button */
+.week-delete-btn {
+  background: #fef2f2; color: #ef4444; border: 1px solid #fecaca;
+  padding: 4px 10px; border-radius: 6px; font-size: 0.75rem; cursor: pointer;
+  transition: all 0.2s; margin-left: 8px;
+}
+.week-delete-btn:hover { background: #ef4444; color: #fff; }
+</style>
+<base target="_blank">
+</head>
+<body>
+
+<!-- UNSAVED CHANGES WARNING -->
+<div class="unsaved-bar" id="unsavedBar">
+  <span>⚠️ Bạn có thay đổi chưa lưu!</span>
+  <button onclick="app.saveToGitHub()">💾 Lưu ngay</button>
+</div>
+
+<!-- HEADER -->
+<header class="header">
+  <div class="container header-inner">
+    <div class="brand">
+      <div class="brand-icon">🏪</div>
+      <div class="brand-text">
+        <h1 id="shopNameDisplay">SHOP MINI</h1>
+        <p>Quản lý doanh thu & kho hàng</p>
+      </div>
+    </div>
+    <div class="week-nav">
+      <button onclick="app.prevWeek()" title="Tuần trước">&#8249;</button>
+      <div class="week-info">
+        <div class="week-label" id="weekLabel">Tuần 23 - Năm 2026</div>
+        <div class="week-range" id="weekRange">(22/06/2026 - 28/06/2026)</div>
+      </div>
+      <button onclick="app.nextWeek()" title="Tuần sau">&#8250;</button>
+    </div>
+    <div class="header-actions">
+      <button class="btn btn-ghost btn-sm" id="configBtn" onclick="app.openModal('configModal')">
+        ⚙️ Cấu hình
+      </button>
+      <button class="btn btn-ghost btn-sm" id="editBtn" onclick="app.toggleEdit()">
+        <span id="editIcon">🔒</span> <span id="editText">Edit</span>
+      </button>
+      <div class="flex gap-2" style="position:relative;">
+        <button class="btn btn-success btn-sm" onclick="app.showExportMenu()">
+          <span>⬇</span> Export
+        </button>
+        <div id="exportMenu" class="hidden" style="position:absolute;right:0;top:calc(100% + 8px);background:#fff;border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,0.15);border:1px solid #f3f4f6;overflow:hidden;min-width:160px;z-index:50;">
+          <button class="btn btn-ghost" style="width:100%;justify-content:flex-start;border-radius:0;border:none;padding:10px 16px;" onclick="app.exportJSON()">📄 Export JSON</button>
+          <button class="btn btn-ghost" style="width:100%;justify-content:flex-start;border-radius:0;border:none;padding:10px 16px;" onclick="app.exportCSV()">📊 Export CSV</button>
+          <button class="btn btn-ghost" style="width:100%;justify-content:flex-start;border-radius:0;border:none;padding:10px 16px;" onclick="app.printPDF()">🖨 Print PDF</button>
+        </div>
+      </div>
+      <button class="btn btn-primary btn-sm" id="saveBtn" onclick="app.saveToGitHub()" disabled>
+        💾 Save
+      </button>
+    </div>
+  </div>
+</header>
+
+<!-- MAIN -->
+<main class="container" style="padding-top:16px;padding-bottom:40px;">
+
+  <div class="dashboard-main">
+
+    <!-- LEFT COLUMN - Wider -->
+    <div class="left-column">
+
+      <!-- Revenue Table -->
+      <div class="card" id="revenueCard">
+        <div class="card-header">
+          <div class="card-title"><span class="icon">📊</span> DOANH THU TUẦN</div>
+          <div class="flex gap-2" style="align-items:center;">
+            <button class="btn btn-danger btn-sm" id="deleteWeekBtn" onclick="app.deleteCurrentWeek()" disabled>🗑 Xóa tuần</button>
+            <button class="btn btn-primary btn-sm" id="addWeekBtn" onclick="app.addWeek()" disabled>+ Thêm tuần</button>
+          </div>
+        </div>
+        <div class="card-body">
+          <div class="table-wrap">
+            <table id="revenueTable" class="revenue-table">
+              <thead>
+                <tr><th>#</th><th>Ngày</th><th>Số đơn</th><th>Tiền (đ)</th><th>Thao tác</th></tr>
+              </thead>
+              <tbody id="revenueBody"></tbody>
+            </table>
+          </div>
+          <div class="week-pagination" id="weekPagination"></div>
+        </div>
+      </div>
+
+      <!-- Inventory Table -->
+      <div class="card" id="inventoryCard">
+        <div class="card-header">
+          <div class="card-title"><span class="icon">📦</span> NGUYÊN LIỆU & VẬT TƯ</div>
+          <div class="flex gap-2">
+            <button class="btn btn-primary btn-sm" id="addMaterialBtn" onclick="app.addMaterialRow()" disabled>+ Thêm vật liệu</button>
+            <button class="btn btn-ghost btn-sm" id="restockBtn" onclick="app.showRestockModal()" disabled>📥 Nhập hàng</button>
+          </div>
+        </div>
+        <div class="card-body">
+          <div class="table-wrap">
+            <table id="inventoryTable">
+              <thead>
+                <tr><th>#</th><th>Tên vật liệu</th><th>Ảnh</th><th>Hiện có</th><th>Đã dùng hôm nay</th><th>Còn lại</th><th>Cần mua</th><th>Thao tác</th></tr>
+              </thead>
+              <tbody id="inventoryBody"></tbody>
+            </table>
+          </div>
+          <div style="padding:8px 16px;font-size:0.7rem;color:#9ca3af;">ⓘ Còn lại = Hiện có - Đã dùng hôm nay</div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- RIGHT COLUMN - Narrower -->
+    <div class="right-column">
+
+      <!-- Shopping List -->
+      <div class="card" id="shoppingCard">
+        <div class="card-header">
+          <div class="card-title"><span class="icon">🛒</span> DANH SÁCH CẦN MUA <span class="card-badge" id="shopBadge">0</span></div>
+        </div>
+        <div class="card-body">
+          <div class="shop-list" id="shoppingList"></div>
+          <div class="shop-footer">
+            <a href="#" onclick="app.scrollToInventory();return false;">🛒 Xem tất cả vật liệu</a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Notes -->
+      <div class="card" id="notesCard">
+        <div class="card-header">
+          <div class="card-title"><span class="icon">📝</span> GHI CHÚ</div>
+          <button class="btn btn-primary btn-sm" id="addNoteBtn" onclick="app.showAddNote()" disabled>+ Thêm ghi chú</button>
+        </div>
+        <div class="card-body">
+          <div class="notes-list" id="notesList"></div>
+          <div class="note-input-wrap hidden" id="noteInputWrap">
+            <input type="text" id="noteInput" placeholder="Nhập ghi chú mới..." onkeydown="if(event.key==='Enter')app.addNote()">
+            <button class="btn btn-primary btn-sm" onclick="app.addNote()">Thêm</button>
+            <button class="btn btn-ghost btn-sm" onclick="app.hideAddNote()">Hủy</button>
+          </div>
+          <div class="shop-footer">
+            <a href="#" onclick="app.showAllNotes();return false;">📝 Xem tất cả ghi chú</a>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+</main>
+
+<!-- MODALS -->
+<div class="modal-overlay" id="passwordModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">🔒 Admin Mode</div>
+      <button class="modal-close" onclick="app.closeModal('passwordModal')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label>Nhập mật khẩu</label>
+        <input type="password" id="adminPassword" placeholder="••••••" onkeydown="if(event.key==='Enter')app.checkPassword()">
+        <div class="hint">Mật khẩu mặc định: 123456</div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost btn-sm" onclick="app.closeModal('passwordModal')">Hủy</button>
+      <button class="btn btn-primary btn-sm" onclick="app.checkPassword()">Xác nhận</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="restockModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">📥 Nhập hàng</div>
+      <button class="modal-close" onclick="app.closeModal('restockModal')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label>Chọn vật liệu</label>
+        <select id="restockMaterial"></select>
+      </div>
+      <div class="form-group">
+        <label>Số lượng nhập thêm</label>
+        <input type="number" id="restockAmount" min="1" value="100">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost btn-sm" onclick="app.closeModal('restockModal')">Hủy</button>
+      <button class="btn btn-primary btn-sm" onclick="app.doRestock()">Nhập hàng</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="allNotesModal">
+  <div class="modal" style="max-width:500px;">
+    <div class="modal-header">
+      <div class="modal-title">📝 Tất cả ghi chú</div>
+      <button class="modal-close" onclick="app.closeModal('allNotesModal')">×</button>
+    </div>
+    <div class="modal-body">
+      <div id="allNotesList" style="max-height:400px;overflow-y:auto;"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost btn-sm" onclick="app.closeModal('allNotesModal')">Đóng</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="configModal">
+  <div class="modal" style="max-width:500px;">
+    <div class="modal-header">
+      <div class="modal-title">⚙️ Cấu hình đồng bộ GitHub</div>
+      <button class="modal-close" onclick="app.closeModal('configModal')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label>GitHub Personal Access Token</label>
+        <input type="password" id="cfgToken" placeholder="ghp_xxxxxxxxxxxx">
+        <div class="hint">Tạo tại: GitHub → Settings → Developer settings → Personal access tokens → Fine-grained tokens. Cần quyền "Contents" (Read + Write).</div>
+      </div>
+      <div class="form-group">
+        <label>Repository (owner/repo)</label>
+        <input type="text" id="cfgRepo" placeholder="username/shop-mini">
+      </div>
+      <div class="form-group">
+        <label>Branch</label>
+        <input type="text" id="cfgBranch" value="main">
+      </div>
+      <div class="form-group">
+        <label>File path</label>
+        <input type="text" id="cfgPath" value="data.json">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost btn-sm" onclick="app.closeModal('configModal')">Hủy</button>
+      <button class="btn btn-primary btn-sm" onclick="app.saveGitHubConfig()">Lưu cấu hình</button>
+      <button class="btn btn-success btn-sm" onclick="app.testGitHubConnection()">🔄 Test kết nối</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast-container" id="toastContainer"></div>
+
+<script>
+const app = {
+  data: null,
+  editMode: false,
+  currentWeekIndex: 0,
+  editingRevenueRow: null,
+  editingInventoryRow: null,
+  hasUnsavedChanges: false,
+
+  init() {
+    this.loadData();
+    this.render();
+    this.setupEventListeners();
+    this.updateWeekNav();
+  },
+
+  loadData() {
+    const saved = localStorage.getItem('shopMiniData');
+    if (saved) {
+      try {
+        this.data = JSON.parse(saved);
+        this.migrateData();
+      } catch (e) {
+        this.resetData();
+      }
+    } else {
+      this.resetData();
+    }
+    this.currentWeekIndex = this.data.weeks.length - 1;
+    if (this.currentWeekIndex < 0) this.currentWeekIndex = 0;
+    this.loadGitHubToken();
+  },
+
+  loadGitHubToken() {
+    const token = localStorage.getItem('shopMiniGitHubToken');
+    if (token) {
+      this.data.github.token = token;
+    }
+  },
+
+  migrateData() {
+    if (!this.data.weeks) this.data.weeks = [];
+    if (!this.data.inventory) this.data.inventory = [];
+    if (!this.data.notes) this.data.notes = [];
+    if (!this.data.github) this.data.github = { token: '', repo: '', branch: 'main', path: 'data.json' };
+    if (!this.data.shopName) this.data.shopName = 'SHOP MINI';
+
+    // Ensure each week has exactly 7 days
+    this.data.weeks.forEach(w => {
+      if (!w.days || w.days.length !== 7) {
+        const start = this.getWeekStartDate(w.weekNumber, w.year);
+        const days = [];
+        const dayNames = ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'];
+        for (let i = 0; i < 7; i++) {
+          const d = new Date(start);
+          d.setDate(d.getDate() + i);
+          days.push({
+            date: this.formatDate(d),
+            dayOfWeek: dayNames[i],
+            orders: (w.days && w.days[i] && w.days[i].orders) || 0,
+            money: (w.days && w.days[i] && w.days[i].money) || 0
+          });
+        }
+        w.days = days;
+      }
+    });
+  },
+
+  resetData() {
+    const now = new Date();
+    const currentWeek = this.getWeekNumber(now);
+    const year = now.getFullYear();
+    const start = this.getWeekStartDate(currentWeek, year);
+    const dayNames = ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'];
+    const days = [];
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(start);
+      d.setDate(d.getDate() + i);
+      days.push({ date: this.formatDate(d), dayOfWeek: dayNames[i], orders: 0, money: 0 });
+    }
+    this.data = {
+      shopName: 'SHOP MINI',
+      weeks: [{
+        id: 'week_' + Date.now(),
+        weekNumber: currentWeek,
+        year: year,
+        days: days
+      }],
+      inventory: [
+        { id: 'mat_' + Date.now(), name: 'Ly nhựa 500ml', image: '', current: 1000, used: 50, remaining: 950, needBuy: 0 },
+        { id: 'mat_' + (Date.now()+1), name: 'Ống hút đen', image: '', current: 1000, used: 50, remaining: 950, needBuy: 0 },
+        { id: 'mat_' + (Date.now()+2), name: 'Sữa tươi Vinamilk', image: '', current: 30, used: 5, remaining: 25, needBuy: 0 },
+        { id: 'mat_' + (Date.now()+3), name: 'Syrup đường đen', image: '', current: 10, used: 2, remaining: 8, needBuy: 0 }
+      ],
+      notes: [],
+      github: { token: '', repo: '', branch: 'main', path: 'data.json' }
+    };
+  },
+
+  getWeekNumber(d) {
+    const date = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+    const dayNum = date.getUTCDay() || 7;
+    date.setUTCDate(date.getUTCDate() + 4 - dayNum);
+    const yearStart = new Date(Date.UTC(date.getUTCFullYear(), 0, 1));
+    return Math.ceil((((date - yearStart) / 86400000) + 1) / 7);
+  },
+
+  getWeekStartDate(weekNumber, year) {
+    const yearStart = new Date(year, 0, 1);
+    const dayOffset = (yearStart.getDay() === 0 ? 6 : yearStart.getDay() - 1);
+    const firstMonday = new Date(yearStart);
+    firstMonday.setDate(yearStart.getDate() + (dayOffset === 0 ? 0 : 7 - dayOffset));
+    const start = new Date(firstMonday);
+    start.setDate(firstMonday.getDate() + (weekNumber - 1) * 7);
+    return start;
+  },
+
+  formatDate(d) {
+    const day = String(d.getDate()).padStart(2, '0');
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const year = d.getFullYear();
+    return `${day}/${month}/${year}`;
+  },
+
+  parseDate(str) {
+    const [day, month, year] = str.split('/').map(Number);
+    return new Date(year, month - 1, day);
+  },
+
+  setupEventListeners() {
+    document.addEventListener('click', (e) => {
+      const menu = document.getElementById('exportMenu');
+      if (!e.target.closest('#exportMenu') && !e.target.closest('.btn-success')) {
+        menu.classList.add('hidden');
+      }
+    });
+
+    window.addEventListener('beforeunload', (e) => {
+      if (this.hasUnsavedChanges) {
+        e.preventDefault();
+        e.returnValue = 'Bạn có thay đổi chưa lưu. Bạn có chắc muốn rời khỏi trang?';
+      }
+    });
+  },
+
+  markUnsaved() {
+    this.hasUnsavedChanges = true;
+    document.getElementById('unsavedBar').classList.add('show');
+    document.getElementById('saveBtn').disabled = false;
+  },
+
+  markSaved() {
+    this.hasUnsavedChanges = false;
+    document.getElementById('unsavedBar').classList.remove('show');
+    document.getElementById('saveBtn').disabled = true;
+  },
+
+  saveLocal() {
+    localStorage.setItem('shopMiniData', JSON.stringify(this.data));
+  },
+
+  render() {
+    document.getElementById('shopNameDisplay').textContent = this.data.shopName;
+    this.renderRevenue();
+    this.renderInventory();
+    this.renderShoppingList();
+    this.renderNotes();
+    this.renderWeekPagination();
+    this.updateWeekNav();
+  },
+
+  renderRevenue() {
+    const tbody = document.getElementById('revenueBody');
+    tbody.innerHTML = '';
+    const week = this.data.weeks[this.currentWeekIndex];
+    if (!week) return;
+
+    week.days.forEach((day, idx) => {
+      const tr = document.createElement('tr');
+      tr.dataset.index = idx;
+      if (this.editingRevenueRow === idx) {
+        tr.classList.add('editing');
+        tr.innerHTML = `
+          <td>${idx + 1}</td>
+          <td>${day.date} (${day.dayOfWeek})</td>
+          <td><input type="number" id="editOrders" value="${day.orders}" min="0"></td>
+          <td><input type="number" id="editMoney" value="${day.money}" min="0"></td>
+          <td class="td-actions">
+            <button class="action-btn save" onclick="app.saveRevenueRow()" title="Lưu">✓</button>
+            <button class="action-btn cancel" onclick="app.cancelEditRevenue()" title="Hủy">✕</button>
+          </td>
+        `;
+      } else {
+        const moneyStr = day.money.toLocaleString('vi-VN') + 'đ';
+        tr.innerHTML = `
+          <td>${idx + 1}</td>
+          <td>${day.date} (${day.dayOfWeek})</td>
+          <td class="td-number">${day.orders}</td>
+          <td class="td-number">${moneyStr}</td>
+          <td class="td-actions">
+            <button class="action-btn edit" onclick="app.editRevenueRow(${idx})" title="Sửa" ${!this.editMode ? 'disabled' : ''}>✎</button>
+          </td>
+        `;
+      }
+      tbody.appendChild(tr);
+    });
+  },
+
+  renderInventory() {
+    const tbody = document.getElementById('inventoryBody');
+    tbody.innerHTML = '';
+    this.data.inventory.forEach((item, idx) => {
+      const tr = document.createElement('tr');
+      tr.dataset.index = idx;
+      if (this.editingInventoryRow === idx) {
+        tr.classList.add('editing');
+        tr.innerHTML = `
+          <td>${idx + 1}</td>
+          <td><input type="text" id="editMatName" value="${item.name}"></td>
+          <td>
+            <div class="img-upload">
+              <input type="file" accept="image/*" onchange="app.uploadImage(this, ${idx})">
+              ${item.image ? `<img class="preview" src="${item.image}">` : `<div class="placeholder">📷</div>`}
+            </div>
+          </td>
+          <td><input type="number" id="editMatCurrent" value="${item.current}" min="0"></td>
+          <td><input type="number" id="editMatUsed" value="${item.used}" min="0"></td>
+          <td class="td-remaining ${item.remaining < 10 ? 'low' : 'ok'}">${item.remaining}</td>
+          <td>${item.needBuy > 0 ? item.needBuy : '-'}</td>
+          <td class="td-actions">
+            <button class="action-btn save" onclick="app.saveInventoryRow()" title="Lưu">✓</button>
+            <button class="action-btn cancel" onclick="app.cancelEditInventory()" title="Hủy">✕</button>
+          </td>
+        `;
+      } else {
+        tr.innerHTML = `
+          <td>${idx + 1}</td>
+          <td>${item.name}</td>
+          <td>
+            ${item.image ? `<img class="td-img" src="${item.image}">` : `<div class="td-img-placeholder">📦</div>`}
+          </td>
+          <td class="td-number">${item.current}</td>
+          <td class="td-number">${item.used}</td>
+          <td class="td-remaining ${item.remaining < 10 ? 'low' : 'ok'}">${item.remaining}</td>
+          <td>${item.needBuy > 0 ? item.needBuy : '-'}</td>
+          <td class="td-actions">
+            <button class="action-btn edit" onclick="app.editInventoryRow(${idx})" title="Sửa" ${!this.editMode ? 'disabled' : ''}>✎</button>
+            <button class="action-btn delete" onclick="app.deleteInventoryRow(${idx})" title="Xóa" ${!this.editMode ? 'disabled' : ''}>🗑</button>
+          </td>
+        `;
+      }
+      tbody.appendChild(tr);
+    });
+  },
+
+  renderShoppingList() {
+    const list = document.getElementById('shoppingList');
+    list.innerHTML = '';
+    const needBuy = this.data.inventory.filter(i => i.needBuy > 0 || i.remaining < 10);
+    document.getElementById('shopBadge').textContent = needBuy.length;
+
+    if (needBuy.length === 0) {
+      list.innerHTML = `<div class="empty-state"><div class="icon">🛒</div><p>Không có vật liệu cần mua</p></div>`;
+      return;
+    }
+
+    needBuy.forEach(item => {
+      const div = document.createElement('div');
+      div.className = 'shop-item';
+      div.innerHTML = `
+        <div class="shop-item-check"><input type="checkbox" class="custom-checkbox" onchange="this.checked ? this.closest('.shop-item').style.opacity='0.5' : this.closest('.shop-item').style.opacity='1'"></div>
+        ${item.image ? `<img class="shop-item-img" src="${item.image}">` : `<div class="shop-item-img-placeholder">📦</div>`}
+        <div class="shop-item-info">
+          <div class="shop-item-name">${item.name}</div>
+          <div class="shop-item-detail">Hiện có: ${item.current} cái</div>
+        </div>
+        <div class="shop-item-remaining">
+          <div class="label">Còn lại</div>
+          <div class="value">${item.remaining} cái</div>
+        </div>
+      `;
+      list.appendChild(div);
+    });
+  },
+
+  renderNotes() {
+    const list = document.getElementById('notesList');
+    list.innerHTML = '';
+    const recent = this.data.notes.slice(-5).reverse();
+    if (recent.length === 0) {
+      list.innerHTML = `<div class="empty-state"><div class="icon">📝</div><p>Chưa có ghi chú</p></div>`;
+      return;
+    }
+    recent.forEach(note => {
+      const div = document.createElement('div');
+      div.className = 'note-item';
+      div.innerHTML = `
+        <div class="note-bullet"></div>
+        <div class="note-content">
+          <div class="note-text">${this.escapeHtml(note.text)}</div>
+          <div class="note-time">${note.time}</div>
+        </div>
+        <button class="note-delete" onclick="app.deleteNote('${note.id}')" title="Xóa">×</button>
+      `;
+      list.appendChild(div);
+    });
+  },
+
+  renderWeekPagination() {
+    const container = document.getElementById('weekPagination');
+    container.innerHTML = '';
+    const total = this.data.weeks.length;
+    if (total <= 1) return;
+
+    const prevBtn = document.createElement('button');
+    prevBtn.innerHTML = '‹';
+    prevBtn.disabled = this.currentWeekIndex === 0;
+    prevBtn.onclick = () => { this.prevWeek(); };
+    container.appendChild(prevBtn);
+
+    for (let i = 0; i < total; i++) {
+      const btn = document.createElement('button');
+      btn.textContent = i + 1;
+      if (i === this.currentWeekIndex) btn.classList.add('active');
+      btn.onclick = () => { this.currentWeekIndex = i; this.render(); };
+      container.appendChild(btn);
+    }
+
+    const nextBtn = document.createElement('button');
+    nextBtn.innerHTML = '›';
+    nextBtn.disabled = this.currentWeekIndex === total - 1;
+    nextBtn.onclick = () => { this.nextWeek(); };
+    container.appendChild(nextBtn);
+
+    const info = document.createElement('span');
+    info.className = 'week-pagination-info';
+    info.textContent = `Hiển thị tuần ${this.currentWeekIndex + 1} / ${total}`;
+    container.appendChild(info);
+  },
+
+  updateWeekNav() {
+    const week = this.data.weeks[this.currentWeekIndex];
+    if (!week) return;
+    const start = this.parseDate(week.days[0].date);
+    const end = this.parseDate(week.days[6].date);
+    document.getElementById('weekLabel').textContent = `Tuần ${week.weekNumber} - Năm ${week.year}`;
+    document.getElementById('weekRange').textContent = `(${week.days[0].date} - ${week.days[6].date})`;
+  },
+
+  prevWeek() {
+    if (this.currentWeekIndex > 0) {
+      this.currentWeekIndex--;
+      this.render();
+    }
+  },
+
+  nextWeek() {
+    if (this.currentWeekIndex < this.data.weeks.length - 1) {
+      this.currentWeekIndex++;
+      this.render();
+    }
+  },
+
+  addWeek() {
+    if (!this.editMode) return;
+    const lastWeek = this.data.weeks[this.data.weeks.length - 1];
+    const lastDate = this.parseDate(lastWeek.days[6].date);
+    const nextMonday = new Date(lastDate);
+    nextMonday.setDate(lastDate.getDate() + 1);
+    const weekNum = this.getWeekNumber(nextMonday);
+    const year = nextMonday.getFullYear();
+    const dayNames = ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'];
+    const days = [];
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(nextMonday);
+      d.setDate(nextMonday.getDate() + i);
+      days.push({ date: this.formatDate(d), dayOfWeek: dayNames[i], orders: 0, money: 0 });
+    }
+    this.data.weeks.push({
+      id: 'week_' + Date.now(),
+      weekNumber: weekNum,
+      year: year,
+      days: days
+    });
+    this.currentWeekIndex = this.data.weeks.length - 1;
+    this.markUnsaved();
+    this.saveLocal();
+    this.render();
+    this.showToast('Đã thêm tuần mới', 'success');
+  },
+
+  deleteCurrentWeek() {
+    if (!this.editMode) return;
+    if (this.data.weeks.length <= 1) {
+      this.showToast('Không thể xóa tuần cuối cùng', 'warning');
+      return;
+    }
+    this.data.weeks.splice(this.currentWeekIndex, 1);
+    if (this.currentWeekIndex >= this.data.weeks.length) {
+      this.currentWeekIndex = this.data.weeks.length - 1;
+    }
+    this.markUnsaved();
+    this.saveLocal();
+    this.render();
+    this.showToast('Đã xóa tuần', 'success');
+  },
+
+  editRevenueRow(index) {
+    if (!this.editMode) return;
+    this.editingRevenueRow = index;
+    this.renderRevenue();
+  },
+
+  saveRevenueRow() {
+    const orders = parseInt(document.getElementById('editOrders').value) || 0;
+    const money = parseInt(document.getElementById('editMoney').value) || 0;
+    const week = this.data.weeks[this.currentWeekIndex];
+    week.days[this.editingRevenueRow].orders = orders;
+    week.days[this.editingRevenueRow].money = money;
+    this.editingRevenueRow = null;
+    this.markUnsaved();
+    this.saveLocal();
+    this.renderRevenue();
+  },
+
+  cancelEditRevenue() {
+    this.editingRevenueRow = null;
+    this.renderRevenue();
+  },
+
+  addMaterialRow() {
+    if (!this.editMode) return;
+    const id = 'mat_' + Date.now();
+    this.data.inventory.push({ id, name: 'Vật liệu mới', image: '', current: 0, used: 0, remaining: 0, needBuy: 0 });
+    this.markUnsaved();
+    this.saveLocal();
+    this.renderInventory();
+    this.renderShoppingList();
+    this.showToast('Đã thêm vật liệu mới', 'success');
+  },
+
+  editInventoryRow(index) {
+    if (!this.editMode) return;
+    this.editingInventoryRow = index;
+    this.renderInventory();
+  },
+
+  saveInventoryRow() {
+    const item = this.data.inventory[this.editingInventoryRow];
+    item.name = document.getElementById('editMatName').value || 'Không tên';
+    item.current = parseInt(document.getElementById('editMatCurrent').value) || 0;
+    item.used = parseInt(document.getElementById('editMatUsed').value) || 0;
+    item.remaining = item.current - item.used;
+    item.needBuy = item.remaining < 10 ? Math.max(0, 100 - item.remaining) : 0;
+    this.editingInventoryRow = null;
+    this.markUnsaved();
+    this.saveLocal();
+    this.renderInventory();
+    this.renderShoppingList();
+  },
+
+  cancelEditInventory() {
+    this.editingInventoryRow = null;
+    this.renderInventory();
+  },
+
+  deleteInventoryRow(index) {
+    if (!this.editMode) return;
+    if (!confirm('Xóa vật liệu này?')) return;
+    this.data.inventory.splice(index, 1);
+    this.markUnsaved();
+    this.saveLocal();
+    this.renderInventory();
+    this.renderShoppingList();
+  },
+
+  uploadImage(input, index) {
+    const file = input.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      this.data.inventory[index].image = e.target.result;
+      this.markUnsaved();
+      this.saveLocal();
+      this.renderInventory();
+      this.renderShoppingList();
+    };
+    reader.readAsDataURL(file);
+  },
+
+  showRestockModal() {
+    if (!this.editMode) return;
+    const select = document.getElementById('restockMaterial');
+    select.innerHTML = '';
+    this.data.inventory.forEach((item, idx) => {
+      const opt = document.createElement('option');
+      opt.value = idx;
+      opt.textContent = item.name;
+      select.appendChild(opt);
+    });
+    this.openModal('restockModal');
+  },
+
+  doRestock() {
+    const idx = parseInt(document.getElementById('restockMaterial').value);
+    const amount = parseInt(document.getElementById('restockAmount').value) || 0;
+    if (amount <= 0) return;
+    const item = this.data.inventory[idx];
+    item.current += amount;
+    item.remaining = item.current - item.used;
+    item.needBuy = item.remaining < 10 ? Math.max(0, 100 - item.remaining) : 0;
+    this.markUnsaved();
+    this.saveLocal();
+    this.renderInventory();
+    this.renderShoppingList();
+    this.closeModal('restockModal');
+    this.showToast(`Đã nhập ${amount} ${item.name}`, 'success');
+  },
+
+  showAddNote() {
+    if (!this.editMode) return;
+    document.getElementById('noteInputWrap').classList.remove('hidden');
+    document.getElementById('noteInput').focus();
+  },
+
+  hideAddNote() {
+    document.getElementById('noteInputWrap').classList.add('hidden');
+    document.getElementById('noteInput').value = '';
+  },
+
+  addNote() {
+    const input = document.getElementById('noteInput');
+    const text = input.value.trim();
+    if (!text) return;
+    const now = new Date();
+    const time = `${String(now.getDate()).padStart(2,'0')}/${String(now.getMonth()+1).padStart(2,'0')}/${now.getFullYear()} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+    this.data.notes.push({ id: 'note_' + Date.now(), text, time });
+    input.value = '';
+    this.markUnsaved();
+    this.saveLocal();
+    this.renderNotes();
+    this.showToast('Đã thêm ghi chú', 'success');
+  },
+
+  deleteNote(id) {
+    this.data.notes = this.data.notes.filter(n => n.id !== id);
+    this.markUnsaved();
+    this.saveLocal();
+    this.renderNotes();
+  },
+
+  showAllNotes() {
+    const list = document.getElementById('allNotesList');
+    list.innerHTML = '';
+    const all = [...this.data.notes].reverse();
+    if (all.length === 0) {
+      list.innerHTML = '<div class="empty-state"><p>Chưa có ghi chú</p></div>';
+    } else {
+      all.forEach(note => {
+        const div = document.createElement('div');
+        div.className = 'note-item';
+        div.style.borderBottom = '1px solid #f3f4f6';
+        div.innerHTML = `
+          <div class="note-bullet"></div>
+          <div class="note-content">
+            <div class="note-text">${this.escapeHtml(note.text)}</div>
+            <div class="note-time">${note.time}</div>
+          </div>
+          <button class="note-delete" onclick="app.deleteNote('${note.id}')" title="Xóa">×</button>
+        `;
+        list.appendChild(div);
+      });
+    }
+    this.openModal('allNotesModal');
+  },
+
+  toggleEdit() {
+    if (!this.editMode) {
+      this.openModal('passwordModal');
+      document.getElementById('adminPassword').focus();
+    } else {
+      this.editMode = false;
+      this.editingRevenueRow = null;
+      this.editingInventoryRow = null;
+      document.getElementById('editIcon').textContent = '🔒';
+      document.getElementById('editText').textContent = 'Edit';
+      document.getElementById('addWeekBtn').disabled = true;
+      document.getElementById('deleteWeekBtn').disabled = true;
+      document.getElementById('addMaterialBtn').disabled = true;
+      document.getElementById('restockBtn').disabled = true;
+      document.getElementById('addNoteBtn').disabled = true;
+      this.render();
+      this.showToast('Đã khóa chế độ chỉnh sửa', 'warning');
+    }
+  },
+
+  checkPassword() {
+    const pwd = document.getElementById('adminPassword').value;
+    if (pwd === '123456') {
+      this.editMode = true;
+      document.getElementById('editIcon').textContent = '🔓';
+      document.getElementById('editText').textContent = 'Edit (ON)';
+      document.getElementById('addWeekBtn').disabled = false;
+      document.getElementById('deleteWeekBtn').disabled = false;
+      document.getElementById('addMaterialBtn').disabled = false;
+      document.getElementById('restockBtn').disabled = false;
+      document.getElementById('addNoteBtn').disabled = false;
+      document.getElementById('adminPassword').value = '';
+      this.closeModal('passwordModal');
+      this.render();
+      this.showToast('Đã mở khóa chế độ chỉnh sửa', 'success');
+    } else {
+      this.showToast('Mật khẩu không đúng', 'error');
+    }
+  },
+
+  openModal(id) {
+    document.getElementById(id).classList.add('active');
+  },
+
+  closeModal(id) {
+    document.getElementById(id).classList.remove('active');
+  },
+
+  showExportMenu() {
+    document.getElementById('exportMenu').classList.toggle('hidden');
+  },
+
+  exportJSON() {
+    const blob = new Blob([JSON.stringify(this.data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `shop-mini-${new Date().toISOString().slice(0,10)}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    this.showToast('Đã export JSON', 'success');
+  },
+
+  exportCSV() {
+    let csv = 'Tuần,Ngày,Thứ,Số đơn,Tiền\n';
+    this.data.weeks.forEach(w => {
+      w.days.forEach(d => {
+        csv += `${w.weekNumber},${d.date},${d.dayOfWeek},${d.orders},${d.money}\n`;
+      });
+    });
+    csv += '\nVật liệu,Tên,Hiện có,Đã dùng,Còn lại,Cần mua\n';
+    this.data.inventory.forEach(i => {
+      csv += `,${i.name},${i.current},${i.used},${i.remaining},${i.needBuy}\n`;
+    });
+    const blob = new Blob(["\uFEFF" + csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `shop-mini-${new Date().toISOString().slice(0,10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    this.showToast('Đã export CSV', 'success');
+  },
+
+  printPDF() {
+    window.print();
+  },
+
+  scrollToInventory() {
+    document.getElementById('inventoryCard').scrollIntoView({ behavior: 'smooth' });
+  },
+
+  saveGitHubConfig() {
+    const token = document.getElementById('cfgToken').value;
+    localStorage.setItem('shopMiniGitHubToken', token);
+    this.data.github = {
+      token: token,
+      repo: document.getElementById('cfgRepo').value,
+      branch: document.getElementById('cfgBranch').value,
+      path: document.getElementById('cfgPath').value
+    };
+    this.saveLocal();
+    this.showToast('Đã lưu cấu hình GitHub', 'success');
+    this.closeModal('configModal');
+  },
+
+  async testGitHubConnection() {
+    const token = document.getElementById('cfgToken').value || localStorage.getItem('shopMiniGitHubToken');
+    const repo = document.getElementById('cfgRepo').value;
+    const branch = document.getElementById('cfgBranch').value;
+    const path = document.getElementById('cfgPath').value;
+    if (!token || !repo) {
+      this.showToast('Vui lòng nhập đầy đủ Token và Repo', 'error');
+      return;
+    }
+    try {
+      const res = await fetch(`https://api.github.com/repos/${repo}/contents/${path}?ref=${branch}`, {
+        headers: { Authorization: `token ${token}`, Accept: 'application/vnd.github.v3+json' }
+      });
+      if (res.status === 404) {
+        this.showToast('Kết nối thành công (file chưa tồn tại)', 'success');
+      } else if (res.ok) {
+        this.showToast('Kết nối thành công', 'success');
+      } else {
+        const err = await res.json();
+        this.showToast('Lỗi: ' + (err.message || 'Không xác định'), 'error');
+      }
+    } catch (e) {
+      this.showToast('Lỗi kết nối: ' + e.message, 'error');
+    }
+  },
+
+  async saveToGitHub() {
+    const cfg = this.data.github;
+    const token = localStorage.getItem('shopMiniGitHubToken') || cfg.token;
+    if (!token || !cfg.repo) {
+      this.showToast('Chưa cấu hình GitHub. Vui lòng vào Cấu hình.', 'warning');
+      this.openModal('configModal');
+      return;
+    }
+    try {
+      // Tạo bản sao data, xóa token để tránh GitHub phát hiện secret
+      const dataToPush = JSON.parse(JSON.stringify(this.data));
+      dataToPush.github = { token: '', repo: cfg.repo, branch: cfg.branch, path: cfg.path };
+
+      const content = btoa(unescape(encodeURIComponent(JSON.stringify(dataToPush, null, 2))));
+      let sha = null;
+      const getUrl = `https://api.github.com/repos/${cfg.repo}/contents/${cfg.path}?ref=${cfg.branch}`;
+      console.log('[GitHub] GET', getUrl);
+      const getRes = await fetch(getUrl, {
+        headers: { Authorization: `token ${token}`, Accept: 'application/vnd.github.v3+json' }
+      });
+      console.log('[GitHub] GET status:', getRes.status);
+      if (getRes.ok) {
+        const data = await getRes.json();
+        sha = data.sha;
+        console.log('[GitHub] Got SHA:', sha);
+      } else if (getRes.status === 404) {
+        console.log('[GitHub] File not found, will create new');
+      } else {
+        const errText = await getRes.text();
+        console.error('[GitHub] GET error:', getRes.status, errText);
+      }
+
+      const body = { message: 'Update shop mini data', content, branch: cfg.branch };
+      if (sha) body.sha = sha;
+
+      const putUrl = `https://api.github.com/repos/${cfg.repo}/contents/${cfg.path}`;
+      console.log('[GitHub] PUT', putUrl, 'sha:', sha);
+      let putRes = await fetch(putUrl, {
+        method: 'PUT',
+        headers: { Authorization: `token ${token}`, Accept: 'application/vnd.github.v3+json', 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+      console.log('[GitHub] PUT status:', putRes.status);
+
+      // Retry 1 lần nếu 409 Conflict (SHA mismatch)
+      if (putRes.status === 409) {
+        console.log('[GitHub] 409 Conflict, retrying with fresh SHA...');
+        const retryGet = await fetch(getUrl, {
+          headers: { Authorization: `token ${token}`, Accept: 'application/vnd.github.v3+json' }
+        });
+        if (retryGet.ok) {
+          const retryData = await retryGet.json();
+          body.sha = retryData.sha;
+          console.log('[GitHub] Retry with new SHA:', body.sha);
+          putRes = await fetch(putUrl, {
+            method: 'PUT',
+            headers: { Authorization: `token ${token}`, Accept: 'application/vnd.github.v3+json', 'Content-Type': 'application/json' },
+            body: JSON.stringify(body)
+          });
+          console.log('[GitHub] Retry PUT status:', putRes.status);
+        }
+      }
+
+      if (putRes.ok) {
+        this.markSaved();
+        this.showToast('Đã lưu lên GitHub thành công', 'success');
+      } else {
+        const errText = await putRes.text();
+        let errMsg = 'Không xác định';
+        try { const errJson = JSON.parse(errText); errMsg = errJson.message || errText; } catch(e) { errMsg = errText; }
+        console.error('[GitHub] PUT error:', putRes.status, errMsg);
+        this.showToast('Lỗi lưu GitHub (' + putRes.status + '): ' + errMsg, 'error');
+      }
+    } catch (e) {
+      console.error('[GitHub] Exception:', e);
+      this.showToast('Lỗi: ' + e.message, 'error');
+    }
+  },
+
+  showToast(message, type = 'info') {
+    const container = document.getElementById('toastContainer');
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+    toast.textContent = message;
+    container.appendChild(toast);
+    setTimeout(() => {
+      toast.style.opacity = '0';
+      toast.style.transform = 'translateY(20px)';
+      setTimeout(() => toast.remove(), 300);
+    }, 3000);
+  },
+
+  escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+  }
+};
+
+document.addEventListener('DOMContentLoaded', () => app.init());
+</script>
+</body>
+</html>
