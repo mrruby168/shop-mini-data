@@ -582,7 +582,11 @@ const app = {
       });
       if (res.ok) {
         const fileData = await res.json();
-        const jsonStr = decodeURIComponent(escape(atob(fileData.content)));
+        const base64Clean = fileData.content.replace(/\s/g, ''); // GitHub API chèn \n mỗi 60 ký tự → phải xoá trước
+        const binary = atob(base64Clean);
+        const bytes = new Uint8Array(binary.length);
+        for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+        const jsonStr = new TextDecoder('utf-8').decode(bytes); // decode UTF-8 đúng chuẩn cho tiếng Việt
         const remoteData = JSON.parse(jsonStr);
         // Merge: giữ lại github config local, lấy data từ remote
         this.data = {
