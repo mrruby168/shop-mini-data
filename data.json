@@ -20,31 +20,31 @@
         },
         {
           "date": "24/07/2026",
-          "dayOfWeek": "T6",
+          "dayOfWeek": "T4",
           "orders": 0,
           "money": 0
         },
         {
           "date": "25/07/2026",
-          "dayOfWeek": "T7",
+          "dayOfWeek": "T5",
           "orders": 0,
           "money": 0
         },
         {
           "date": "26/07/2026",
-          "dayOfWeek": "CN",
+          "dayOfWeek": "T6",
           "orders": 0,
           "money": 0
         },
         {
           "date": "27/07/2026",
-          "dayOfWeek": "T2",
+          "dayOfWeek": "T7",
           "orders": 0,
           "money": 0
         },
         {
           "date": "28/07/2026",
-          "dayOfWeek": "T3",
+          "dayOfWeek": "CN",
           "orders": 0,
           "money": 0
         }
