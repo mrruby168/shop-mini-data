@@ -356,12 +356,12 @@ td input:focus, td select:focus { border-color: #6366f1; box-shadow: 0 0 0 3px r
           <div class="table-wrap">
             <table id="inventoryTable">
               <thead>
-                <tr><th>#</th><th>Tên vật liệu</th><th>Ảnh</th><th>Hiện có</th><th>Đã dùng hôm nay</th><th>Còn lại</th><th>Cần mua</th><th>Thao tác</th></tr>
+                <tr><th>#</th><th>Tên vật liệu</th><th>Ảnh</th><th>Hiện có</th><th>Thao tác</th></tr>
               </thead>
               <tbody id="inventoryBody"></tbody>
             </table>
           </div>
-          <div style="padding:8px 16px;font-size:0.7rem;color:#9ca3af;">ⓘ Còn lại = Hiện có - Đã dùng hôm nay</div>
+
         </div>
       </div>
 
@@ -377,7 +377,8 @@ td input:focus, td select:focus { border-color: #6366f1; box-shadow: 0 0 0 3px r
         </div>
         <div class="card-body">
           <div class="shop-list" id="shoppingList"></div>
-          <div class="shop-footer">
+          <div class="shop-footer" style="display:flex;flex-direction:column;gap:6px;align-items:center;padding:10px 14px;">
+            <button class="btn btn-danger btn-sm" onclick="app.exportShoppingReport()" style="width:100%;font-size:0.8rem;">📋 Tạo báo cáo</button>
             <a href="#" onclick="app.scrollToInventory();return false;">🛒 Xem tất cả vật liệu</a>
           </div>
         </div>
@@ -499,6 +500,32 @@ td input:focus, td select:focus { border-color: #6366f1; box-shadow: 0 0 0 3px r
   </div>
 </div>
 
+<div class="modal-overlay" id="addWeekModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">➕ Thêm tuần mới</div>
+      <button class="modal-close" onclick="app.closeModal('addWeekModal')">×</button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:0.82rem;color:#6b7280;margin-bottom:14px;">Nhập ngày bắt đầu (T2) và ngày kết thúc (CN) cho tuần mới.</p>
+      <div class="form-group">
+        <label>📅 Ngày bắt đầu (Thứ 2)</label>
+        <input type="text" id="newWeekStart" placeholder="dd/mm/yyyy" maxlength="10" onkeyup="app.autoSlashDate('newWeekStart')">
+        <div class="hint">Ví dụ: 29/06/2026</div>
+      </div>
+      <div class="form-group">
+        <label>📅 Ngày kết thúc (Chủ nhật)</label>
+        <input type="text" id="newWeekEnd" placeholder="dd/mm/yyyy" maxlength="10" onkeyup="app.autoSlashDate('newWeekEnd')">
+        <div class="hint">Ví dụ: 05/07/2026</div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost btn-sm" onclick="app.closeModal('addWeekModal')">Hủy</button>
+      <button class="btn btn-primary btn-sm" onclick="app.confirmAddWeek()">✓ Thêm tuần</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast-container" id="toastContainer"></div>
 
 <script>
@@ -586,6 +613,13 @@ const app = {
     if (!this.data.github) this.data.github = { token: '', repo: '', branch: 'main', path: 'data.json' };
     if (!this.data.shopName) this.data.shopName = 'SHOP MINI';
 
+    // Convert numeric current → string (migration cho data cũ)
+    this.data.inventory.forEach(item => {
+      if (item.current === undefined || item.current === null) item.current = '';
+      else if (typeof item.current === 'number') item.current = String(item.current);
+      if (item.needBuy === undefined) item.needBuy = 0;
+    });
+
     // Ensure each week has exactly 7 days
     this.data.weeks.forEach(w => {
       if (!w.days || w.days.length !== 7) {
@@ -628,10 +662,10 @@ const app = {
         days: days
       }],
       inventory: [
-        { id: 'mat_' + Date.now(), name: 'Ly nhựa 500ml', image: '', current: 1000, used: 50, remaining: 950, needBuy: 0 },
-        { id: 'mat_' + (Date.now()+1), name: 'Ống hút đen', image: '', current: 1000, used: 50, remaining: 950, needBuy: 0 },
-        { id: 'mat_' + (Date.now()+2), name: 'Sữa tươi Vinamilk', image: '', current: 30, used: 5, remaining: 25, needBuy: 0 },
-        { id: 'mat_' + (Date.now()+3), name: 'Syrup đường đen', image: '', current: 10, used: 2, remaining: 8, needBuy: 0 }
+        { id: 'mat_' + Date.now(), name: 'Ly nhựa 500ml', image: '', current: '1000 cái', needBuy: 0 },
+        { id: 'mat_' + (Date.now()+1), name: 'Ống hút đen', image: '', current: '1000 cái', needBuy: 0 },
+        { id: 'mat_' + (Date.now()+2), name: 'Sữa tươi Vinamilk', image: '', current: '30 hộp', needBuy: 0 },
+        { id: 'mat_' + (Date.now()+3), name: 'Syrup đường đen', image: '', current: '10 chai', needBuy: 0 }
       ],
       notes: [],
       github: { token: '', repo: '', branch: 'main', path: 'data.json' }
@@ -764,27 +798,24 @@ const app = {
               ${item.image ? `<img class="preview" src="${item.image}">` : `<div class="placeholder">📷</div>`}
             </div>
           </td>
-          <td><input type="number" id="editMatCurrent" value="${item.current}" min="0"></td>
-          <td><input type="number" id="editMatUsed" value="${item.used}" min="0"></td>
-          <td class="td-remaining ${item.remaining < 10 ? 'low' : 'ok'}">${item.remaining}</td>
-          <td>${item.needBuy > 0 ? item.needBuy : '-'}</td>
+          <td><input type="text" id="editMatCurrent" value="${item.current}" placeholder="VD: 3 cuộn, 100 cái, 2kg..."></td>
           <td class="td-actions">
             <button class="action-btn save" onclick="app.saveInventoryRow()" title="Lưu">✓</button>
             <button class="action-btn cancel" onclick="app.cancelEditInventory()" title="Hủy">✕</button>
           </td>
         `;
       } else {
+        const inCart = item.needBuy > 0;
         tr.innerHTML = `
           <td>${idx + 1}</td>
           <td>${item.name}</td>
           <td>
             ${item.image ? `<img class="td-img" src="${item.image}">` : `<div class="td-img-placeholder">📦</div>`}
           </td>
-          <td class="td-number">${item.current}</td>
-          <td class="td-number">${item.used}</td>
-          <td class="td-remaining ${item.remaining < 10 ? 'low' : 'ok'}">${item.remaining}</td>
-          <td><input type="checkbox" class="custom-checkbox" ${item.needBuy > 0 ? 'checked' : ''} onchange="app.toggleNeedBuy(${idx})"></td>
+          <td class="td-number" style="font-size:0.95rem;font-weight:600;">${item.current || '—'}</td>
           <td class="td-actions">
+            <button class="action-btn" onclick="app.toggleNeedBuy(${idx})" title="${inCart ? 'Bỏ khỏi danh sách mua' : 'Thêm vào danh sách mua'}"
+              style="background:${inCart ? '#fef9c3' : '#f3f4f6'};color:${inCart ? '#d97706' : '#9ca3af'};border:1px solid ${inCart ? '#fde68a' : '#e5e7eb'};">🛒</button>
             <button class="action-btn edit" onclick="app.editInventoryRow(${idx})" title="Sửa" ${!this.editMode ? 'disabled' : ''}>✎</button>
             <button class="action-btn delete" onclick="app.deleteInventoryRow(${idx})" title="Xóa" ${!this.editMode ? 'disabled' : ''}>🗑</button>
           </td>
@@ -812,11 +843,7 @@ const app = {
         ${item.image ? `<img class="shop-item-img" src="${item.image}">` : `<div class="shop-item-img-placeholder">📦</div>`}
         <div class="shop-item-info">
           <div class="shop-item-name">${item.name}</div>
-          <div class="shop-item-detail">Hiện có: ${item.current} cái</div>
-        </div>
-        <div class="shop-item-remaining">
-          <div class="label">Còn lại</div>
-          <div class="value">${item.remaining} cái</div>
+          <div class="shop-item-detail">Kho còn: ${item.current || '—'}</div>
         </div>
       `;
       list.appendChild(div);
@@ -903,17 +930,43 @@ const app = {
 
   addWeek() {
     if (!this.editMode) return;
+    // Pre-fill suggested dates dựa trên tuần cuối
     const lastWeek = this.data.weeks[this.data.weeks.length - 1];
     const lastDate = this.parseDate(lastWeek.days[6].date);
     const nextMonday = new Date(lastDate);
     nextMonday.setDate(lastDate.getDate() + 1);
-    const weekNum = this.getWeekNumber(nextMonday);
-    const year = nextMonday.getFullYear();
+    const nextSunday = new Date(nextMonday);
+    nextSunday.setDate(nextMonday.getDate() + 6);
+    document.getElementById('newWeekStart').value = this.formatDate(nextMonday);
+    document.getElementById('newWeekEnd').value = this.formatDate(nextSunday);
+    this.openModal('addWeekModal');
+  },
+
+  confirmAddWeek() {
+    const startStr = document.getElementById('newWeekStart').value.trim();
+    const endStr = document.getElementById('newWeekEnd').value.trim();
+    if (!startStr || !endStr) {
+      this.showToast('Vui lòng nhập đầy đủ ngày bắt đầu và kết thúc', 'error');
+      return;
+    }
+    const startDate = this.parseDate(startStr);
+    const endDate = this.parseDate(endStr);
+    if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+      this.showToast('Ngày không hợp lệ. Định dạng: dd/mm/yyyy', 'error');
+      return;
+    }
+    const diffDays = Math.round((endDate - startDate) / (1000 * 60 * 60 * 24));
+    if (diffDays !== 6) {
+      this.showToast(`Tuần phải có đúng 7 ngày (hiện tại: ${diffDays + 1} ngày). Hãy kiểm tra lại.`, 'warning');
+      return;
+    }
+    const weekNum = this.getWeekNumber(startDate);
+    const year = startDate.getFullYear();
     const dayNames = ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'];
     const days = [];
     for (let i = 0; i < 7; i++) {
-      const d = new Date(nextMonday);
-      d.setDate(nextMonday.getDate() + i);
+      const d = new Date(startDate);
+      d.setDate(startDate.getDate() + i);
       days.push({ date: this.formatDate(d), dayOfWeek: dayNames[i], orders: 0, money: 0 });
     }
     this.data.weeks.push({
@@ -925,8 +978,9 @@ const app = {
     this.currentWeekIndex = this.data.weeks.length - 1;
     this.markUnsaved();
     this.saveLocal();
+    this.closeModal('addWeekModal');
     this.render();
-    this.showToast('Đã thêm tuần mới', 'success');
+    this.showToast(`Đã thêm tuần ${weekNum}/${year} (${startStr} → ${endStr})`, 'success');
   },
 
   deleteCurrentWeek() {
@@ -984,7 +1038,7 @@ const app = {
   addMaterialRow() {
     if (!this.editMode) return;
     const id = 'mat_' + Date.now();
-    this.data.inventory.push({ id, name: 'Vật liệu mới', image: '', current: 0, used: 0, remaining: 0, needBuy: 0 });
+    this.data.inventory.push({ id, name: 'Vật liệu mới', image: '', current: '', needBuy: 0 });
     this.markUnsaved();
     this.saveLocal();
     this.renderInventory();
@@ -1001,10 +1055,8 @@ const app = {
   saveInventoryRow() {
     const item = this.data.inventory[this.editingInventoryRow];
     item.name = document.getElementById('editMatName').value || 'Không tên';
-    item.current = parseInt(document.getElementById('editMatCurrent').value) || 0;
-    item.used = parseInt(document.getElementById('editMatUsed').value) || 0;
-    item.remaining = item.current - item.used;
-    // Không tự động tính needBuy — user tự tick checkbox
+    item.current = document.getElementById('editMatCurrent').value; // lưu string, ko giới hạn
+    // Không tính used/remaining — user quản lý tự do qua text
     this.editingInventoryRow = null;
     this.markUnsaved();
     this.saveLocal();
@@ -1059,15 +1111,24 @@ const app = {
     const amount = parseInt(document.getElementById('restockAmount').value) || 0;
     if (amount <= 0) return;
     const item = this.data.inventory[idx];
-    item.current += amount;
-    item.remaining = item.current - item.used;
-    item.needBuy = item.remaining < 10 ? Math.max(0, 100 - item.remaining) : 0;
+    // Thử cộng số nếu current là số thuần, nếu không thì nối text
+    const currentNum = parseFloat(String(item.current).replace(/[^\d.]/g, ''));
+    if (!isNaN(currentNum) && String(item.current).trim() === String(currentNum)) {
+      item.current = String(currentNum + amount);
+    } else if (!isNaN(currentNum) && String(item.current).match(/^\d+/)) {
+      // có số ở đầu, giữ phần suffix
+      const suffix = String(item.current).replace(/^\d+/, '');
+      item.current = String(currentNum + amount) + suffix;
+    } else {
+      item.current = item.current ? `${item.current} + ${amount}` : String(amount);
+    }
+    item.needBuy = 0;
     this.markUnsaved();
     this.saveLocal();
     this.renderInventory();
     this.renderShoppingList();
     this.closeModal('restockModal');
-    this.showToast(`Đã nhập ${amount} ${item.name}`, 'success');
+    this.showToast(`Đã nhập ${amount} vào ${item.name}`, 'success');
   },
 
   showAddNote() {
@@ -1194,8 +1255,11 @@ const app = {
     const a = document.createElement('a');
     a.href = url;
     a.download = `shop-mini-${new Date().toISOString().slice(0,10)}.json`;
+    a.setAttribute('target', '_self');
+    a.style.display = 'none';
+    document.body.appendChild(a);
     a.click();
-    URL.revokeObjectURL(url);
+    setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 200);
     this.showToast('Đã export JSON', 'success');
   },
 
@@ -1206,17 +1270,20 @@ const app = {
         csv += `${w.weekNumber},${d.date},${d.dayOfWeek},${d.orders},${d.money}\n`;
       });
     });
-    csv += '\nVật liệu,Tên,Hiện có,Đã dùng,Còn lại,Cần mua\n';
+    csv += '\nVật liệu,Tên,Hiện có,Cần mua\n';
     this.data.inventory.forEach(i => {
-      csv += `,${i.name},${i.current},${i.used},${i.remaining},${i.needBuy}\n`;
+      csv += `,${i.name},${i.current},${i.needBuy > 0 ? 'CÓ' : 'KHÔNG'}\n`;
     });
     const blob = new Blob(["\uFEFF" + csv], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
     a.download = `shop-mini-${new Date().toISOString().slice(0,10)}.csv`;
+    a.setAttribute('target', '_self');
+    a.style.display = 'none';
+    document.body.appendChild(a);
     a.click();
-    URL.revokeObjectURL(url);
+    setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 200);
     this.showToast('Đã export CSV', 'success');
   },
 
@@ -1398,6 +1465,43 @@ const app = {
       toast.style.transform = 'translateY(20px)';
       setTimeout(() => toast.remove(), 300);
     }, 3000);
+  },
+
+  exportShoppingReport() {
+    const needBuy = this.data.inventory.filter(i => i.needBuy > 0);
+    if (needBuy.length === 0) {
+      this.showToast('Chưa có vật liệu nào được đánh dấu cần mua (bấm 🛒 để đánh dấu)', 'warning');
+      return;
+    }
+    const now = new Date();
+    const dateStr = `${String(now.getDate()).padStart(2,'0')}/${String(now.getMonth()+1).padStart(2,'0')}/${now.getFullYear()}`;
+    let txt = '🚨🚨🚨 BÁO CÁO VẬT LIỆU CẦN MUA\n';
+    txt += 'Ngày tạo: ' + dateStr + '\n';
+    txt += '─────────────────────────────────\n';
+    needBuy.forEach((item, idx) => {
+      txt += (idx + 1) + '.' + item.name.toUpperCase() + ' : CẦN MUA  ( KHO CÒN : ' + (item.current || '—') + ' )\n';
+    });
+    // Dùng BOM UTF-8 để Windows đọc đúng tiếng Việt
+    const bom = '\uFEFF';
+    const blob = new Blob([bom + txt], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'bao-cao-vat-lieu-' + new Date().toISOString().slice(0,10) + '.txt';
+    a.setAttribute('target', '_self'); // override <base target="_blank">
+    a.style.display = 'none';
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 200);
+    this.showToast('Đã tạo báo cáo TXT', 'success');
+  },
+
+  autoSlashDate(inputId) {
+    const el = document.getElementById(inputId);
+    let v = el.value.replace(/\D/g, '');
+    if (v.length > 2 && v.length <= 4) v = v.slice(0,2) + '/' + v.slice(2);
+    else if (v.length > 4) v = v.slice(0,2) + '/' + v.slice(2,4) + '/' + v.slice(4,8);
+    el.value = v;
   },
 
   escapeHtml(text) {
