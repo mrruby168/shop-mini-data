@@ -44,9 +44,9 @@
         },
         {
           "date": "28/07/2026",
-          "dayOfWeek": "CN",
-          "orders": 0,
-          "money": 0
+          "dayOfWeek": "T3",
+          "orders": 9,
+          "money": 27000
         }
       ]
     }
