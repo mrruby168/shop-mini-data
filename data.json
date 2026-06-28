@@ -20,7 +20,7 @@
         },
         {
           "date": "24/07/2026",
-          "dayOfWeek": "T6",
+          "dayOfWeek": "T4",
           "orders": 9,
           "money": 27000
         },
@@ -32,7 +32,7 @@
         },
         {
           "date": "26/07/2026",
-          "dayOfWeek": "CN",
+          "dayOfWeek": "t6",
           "orders": 14,
           "money": 42000
         },
