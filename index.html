@@ -1532,9 +1532,9 @@ const app = {
     }
     const now = new Date();
     const dateStr = `${String(now.getDate()).padStart(2,'0')}/${String(now.getMonth()+1).padStart(2,'0')}/${now.getFullYear()}`;
-    let txt = '🚨🚨🚨 BÁO CÁO VẬT LIỆU CẦN MUA\n';
+    let txt = '🚨 VẬT LIỆU CẦN MUA\n';
     txt += 'Ngày tạo: ' + dateStr + '\n';
-    txt += '─────────────────────────────────\n';
+    txt += '─────────────────\n';
     needBuy.forEach((item, idx) => {
       txt += (idx + 1) + '.' + item.name.toUpperCase() + ' : CẦN MUA  ( KHO CÒN : ' + (item.current || '—') + ' )\n';
     });
