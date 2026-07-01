@@ -759,11 +759,12 @@ const app = {
       tr.dataset.index = idx;
       if (this.editingRevenueRow === idx) {
         tr.classList.add('editing');
+        const editMoneyValue = day.orders * 3000;
         tr.innerHTML = `
           <td>${idx + 1}</td>
           <td><input type="text" id="editDate" value="${day.date}" placeholder="dd/mm/yyyy" style="width:110px;"></td>
-          <td><input type="number" id="editOrders" value="${day.orders}" min="0"></td>
-          <td><input type="number" id="editMoney" value="${day.money}" min="0"></td>
+          <td><input type="number" id="editOrders" value="${day.orders}" min="0" oninput="app.updateEditMoneyPreview()"></td>
+          <td><input type="number" id="editMoney" value="${editMoneyValue}" readonly></td>
           <td class="td-actions">
             <button class="action-btn save" onclick="app.saveRevenueRow()" title="Lưu">✓</button>
             <button class="action-btn cancel" onclick="app.cancelEditRevenue()" title="Hủy">✕</button>
@@ -783,6 +784,19 @@ const app = {
       }
       tbody.appendChild(tr);
     });
+
+    const totalOrders = week.days.reduce((sum, day) => sum + day.orders, 0);
+    const totalMoney = week.days.reduce((sum, day) => sum + day.money, 0);
+    const totalTr = document.createElement('tr');
+    totalTr.className = 'total-row';
+    totalTr.innerHTML = `
+      <td>TỔNG TUẦN</td>
+      <td></td>
+      <td class="td-number">${totalOrders}</td>
+      <td class="td-number">${totalMoney.toLocaleString('vi-VN')}đ</td>
+      <td></td>
+    `;
+    tbody.appendChild(totalTr);
   },
 
   renderInventory() {
@@ -1012,7 +1026,7 @@ const app = {
   saveRevenueRow() {
     const dateInput = document.getElementById('editDate').value.trim();
     const orders = parseInt(document.getElementById('editOrders').value) || 0;
-    const money = parseInt(document.getElementById('editMoney').value) || 0;
+    const money = orders * 3000;
     const week = this.data.weeks[this.currentWeekIndex];
     const day = week.days[this.editingRevenueRow];
     if (dateInput) {
@@ -1032,6 +1046,35 @@ const app = {
     this.saveLocal();
     this.renderRevenue();
     this.updateWeekNav();
+  },
+
+  updateEditMoneyPreview() {
+    const orders = parseInt(document.getElementById('editOrders').value) || 0;
+    const money = orders * 3000;
+    const moneyInput = document.getElementById('editMoney');
+    if (moneyInput) {
+      moneyInput.value = money;
+    }
+
+    const week = this.data.weeks[this.currentWeekIndex];
+    if (!week) return;
+
+    const totalOrders = week.days.reduce((sum, day, idx) => {
+      return sum + (idx === this.editingRevenueRow ? orders : day.orders);
+    }, 0);
+    const totalMoney = week.days.reduce((sum, day, idx) => {
+      return sum + (idx === this.editingRevenueRow ? money : day.money);
+    }, 0);
+
+    const tbody = document.getElementById('revenueBody');
+    const totalRow = tbody.querySelector('tr.total-row');
+    if (totalRow) {
+      const cells = totalRow.querySelectorAll('td');
+      if (cells.length >= 4) {
+        cells[2].textContent = totalOrders;
+        cells[3].textContent = totalMoney.toLocaleString('vi-VN') + 'đ';
+      }
+    }
   },
 
   cancelEditRevenue() {
@@ -1203,8 +1246,18 @@ const app = {
 
   toggleEdit() {
     if (!this.editMode) {
-      this.openModal('passwordModal');
-      document.getElementById('adminPassword').focus();
+      this.editMode = true;
+      this.editingRevenueRow = null;
+      this.editingInventoryRow = null;
+      document.getElementById('editIcon').textContent = '🔓';
+      document.getElementById('editText').textContent = 'Edit (ON)';
+      document.getElementById('addWeekBtn').disabled = false;
+      document.getElementById('deleteWeekBtn').disabled = false;
+      document.getElementById('addMaterialBtn').disabled = false;
+      document.getElementById('restockBtn').disabled = false;
+      document.getElementById('addNoteBtn').disabled = false;
+      this.render();
+      this.showToast('Đã mở khóa chế độ chỉnh sửa', 'success');
     } else {
       this.editMode = false;
       this.editingRevenueRow = null;
