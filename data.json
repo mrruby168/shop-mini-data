@@ -49,6 +49,55 @@
           "money": 24000
         }
       ]
+    },
+    {
+      "id": "week_1782885403222",
+      "weekNumber": 27,
+      "year": 2026,
+      "days": [
+        {
+          "date": "29/06/2026",
+          "dayOfWeek": "T2",
+          "orders": 0,
+          "money": 0
+        },
+        {
+          "date": "30/06/2026",
+          "dayOfWeek": "T3",
+          "orders": 0,
+          "money": 0
+        },
+        {
+          "date": "01/07/2026",
+          "dayOfWeek": "T4",
+          "orders": 17,
+          "money": 51000
+        },
+        {
+          "date": "02/07/2026",
+          "dayOfWeek": "T5",
+          "orders": 0,
+          "money": 0
+        },
+        {
+          "date": "03/07/2026",
+          "dayOfWeek": "T6",
+          "orders": 0,
+          "money": 0
+        },
+        {
+          "date": "04/07/2026",
+          "dayOfWeek": "T7",
+          "orders": 0,
+          "money": 0
+        },
+        {
+          "date": "05/07/2026",
+          "dayOfWeek": "CN",
+          "orders": 0,
+          "money": 0
+        }
+      ]
     }
   ],
   "inventory": [
@@ -80,16 +129,5 @@
       "needBuy": 1
     }
   ],
-  "notes": [
-    {
-      "id": "note_1782148759204",
-      "text": "đã bank 18k ngày 22/06/2026",
-      "time": "23/06/2026 00:19"
-    },
-    {
-      "id": "note_1782655541552",
-      "text": "đã bank 69k",
-      "time": "28/06/2026 21:05"
-    }
-  ]
+  "notes": []
 }
