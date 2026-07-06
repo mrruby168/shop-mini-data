@@ -98,6 +98,55 @@
           "money": 0
         }
       ]
+    },
+    {
+      "id": "week_1783315167134",
+      "weekNumber": 28,
+      "year": 2026,
+      "days": [
+        {
+          "date": "06/07/2026",
+          "dayOfWeek": "T2",
+          "orders": 0,
+          "money": 0
+        },
+        {
+          "date": "07/07/2026",
+          "dayOfWeek": "T3",
+          "orders": 0,
+          "money": 0
+        },
+        {
+          "date": "08/07/2026",
+          "dayOfWeek": "T4",
+          "orders": 0,
+          "money": 0
+        },
+        {
+          "date": "09/07/2026",
+          "dayOfWeek": "T5",
+          "orders": 0,
+          "money": 0
+        },
+        {
+          "date": "10/07/2026",
+          "dayOfWeek": "T6",
+          "orders": 0,
+          "money": 0
+        },
+        {
+          "date": "11/07/2026",
+          "dayOfWeek": "T7",
+          "orders": 0,
+          "money": 0
+        },
+        {
+          "date": "12/07/2026",
+          "dayOfWeek": "CN",
+          "orders": 0,
+          "money": 0
+        }
+      ]
     }
   ],
   "inventory": [
