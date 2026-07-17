@@ -180,8 +180,8 @@
         {
           "date": "17/07/2026",
           "dayOfWeek": "T6",
-          "orders": 0,
-          "money": 0
+          "orders": 5,
+          "money": 15000
         },
         {
           "date": "18/07/2026",
